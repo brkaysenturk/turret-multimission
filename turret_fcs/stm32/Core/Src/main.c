@@ -32,7 +32,7 @@
  * Laboratuvar/donanim testinde acmak icin 1 yapin.
  */
 #ifndef ENABLE_PHYSICAL_FIRE
-#define ENABLE_PHYSICAL_FIRE 0
+#define ENABLE_PHYSICAL_FIRE 1
 #endif
 
 /*

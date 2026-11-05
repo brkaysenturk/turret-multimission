@@ -36,7 +36,7 @@
  * Gercek dart atis testinde 1 yapilabilir.
  */
 #ifndef ENABLE_PHYSICAL_FIRE
-#define ENABLE_PHYSICAL_FIRE 0
+#define ENABLE_PHYSICAL_FIRE 1
 #endif
 
 /*

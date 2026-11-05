@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [3.0.0] - 2026-11-03
+
+v3.0 Production Release standardizes the dual-subsystem monorepo combining Autonomous Air Defense (`turret_fcs`) and Cup Basket Challenge (`turret_basket`), unifies physical & Webots digital twin engagement timings, restores disturbance observer (DOB) support, and expands the STM32 FCS binary command frame to 8 bytes for dynamic flywheel speed control.
+
+### Added
+
+- **Cup Basket Challenge subsystem (`turret_basket/`):** Full standalone 2-stage hierarchical AI system (Cup Mouth Tracker + Neural Ballistics MLP policy `cup_ballistic_policy.npz`) felling darts into table-top cups across varying ranges and super-elevation angles (+21.8° to +22.6°).
+- **Academic Basket Analysis Suite (`turret_basket/analysis/`):** 7 comprehensive academic figures and analysis scripts including RK4 ballistic trajectories, neural policy decisions, 24-table tolerance heatmaps, engagement timing profiles, and Optuna convergence plots.
+- **Dynamic Flywheel Speed via 8-Byte Command Frame (`turret_fcs/protocol.py`, `turret_fcs/stm32/Core/Src/fcs_comm.c`):** Expanded PC-to-STM32 command frame from 7 bytes to 8 bytes (`[0xAA][pan i16][tilt i16][speed u8][state u8][checksum u8]`), enabling dynamic TB6612FNG PWM duty modulation without re-flashing STM32 firmware.
+- **Disturbance Observer support (`turret_fcs/dob.py`):** Restored 1st-order Q-filter disturbance observer module for external disturbance compensation.
+- **Webots Contact Dynamics Tuning:** Refined restitution (`bounce = 0.01`, `bounceVelocity = 0.5`) and angular damping (`0.35`) in `turret_basket.wbt` eliminating trampoline recoil in cup-landing mechanics.
+
+### Changed
+
+- **Version number:** Bumped to `3.0.0` in `pyproject.toml`, `turret_fcs.__version__`, and documentation.
+- **Engagement timing synchronization:** Unified pre-spin, slew, settle, firing, and recovery timelines across physical STM32 firmware and Webots simulation controllers.
+- **Standardized HUD layout:** Equalized tactical HUD layout, typography, reticle rendering, and color palettes across `turret_fcs` and `turret_basket`.
+
+---
+
 ## [2.1.0] - 2026-10-25
 
 v2.1 refines closed-loop tracking robustness, Kalman outlier recovery, short-dropout ego-motion bridging, STM32 UART frame resynchronization, and RL plant fidelity.

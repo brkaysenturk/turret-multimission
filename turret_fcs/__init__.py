@@ -5,7 +5,7 @@ YTU Senior Design Capstone Project
 
 from .config import CONFIG, FCSState
 
-__version__ = "2.1.0"
+__version__ = "3.0.0"
 
 _LAZY_IMPORTS = {
     "FCSManager": ".fcs_manager",
