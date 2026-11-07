@@ -36,6 +36,7 @@ class BasketStatus:
     lock_ratio: float
     speed_mps: float
     tilt_offset_deg: float
+    center_px: Optional[Tuple[int, int]] = None
 
 
 class BasketManager:
@@ -70,6 +71,9 @@ class BasketManager:
         self.locked_dist_m: Optional[float] = None
         self.target_speed_mps = 4.4
         self.target_tilt_offset = 21.8
+        self.target_lost_counter = 0
+        self.last_err_pan_deg = 0.0
+        self.pending_pan_trim_deg = 0.0
 
     def compute_flywheel_pwm(self, speed_mps: float) -> float:
         """FF-180 + TB6612FNG firlatma hizi (m/s) -> 20 kHz PWM duty (80 - 255) eslemesi."""
@@ -92,6 +96,14 @@ class BasketManager:
             if log_cb:
                 log_cb("[WARN] CANNOT FIRE - CUP NOT LOCKED", (0, 60, 255))
             return False
+
+        # Tetik aninda kameradaki kalan ince yatay (pan) hatasini spin-up suresinde sifirlamak uzere mandalla (sensor gerektirmez)
+        if abs(self.last_err_pan_deg) < 2.0:
+            self.pending_pan_trim_deg = float(
+                np.clip(0.85 * self.last_err_pan_deg, -CONFIG.hardware.max_step_deg, CONFIG.hardware.max_step_deg)
+            )
+        else:
+            self.pending_pan_trim_deg = 0.0
 
         current_tilt = self.comm.tilt_angle if self.comm else 0.0
         super_elev = self.ballistics.compute_super_elevation(self.target_tilt_offset)
@@ -140,12 +152,16 @@ class BasketManager:
         self,
         log_cb: Optional[Callable[[str, Tuple[int, int, int]], None]] = None,
     ):
-        """Takipci ve kilit sayacini sifirlar."""
+        """Takipci, dedektor EMA kutusu ve kilit sayacini sifirlar."""
         self.tracker.reset()
+        self.detector.reset()
         self.lock_counter = 0
         self.is_locked = False
         self.lock_ratio = 0.0
         self.locked_dist_m = None
+        self.target_lost_counter = 0
+        self.last_err_pan_deg = 0.0
+        self.pending_pan_trim_deg = 0.0
         self.abort_throw()
         if log_cb:
             log_cb("[RESET] SYSTEM FILTERS FLUSHED", (255, 215, 0))
@@ -162,10 +178,13 @@ class BasketManager:
         h, w = frame.shape[:2]
         cx_screen, cy_screen = w // 2, h // 2
 
-        # 1. Kupa Tespiti (YOLOv8)
-        det: CupDetection = self.detector.detect(frame)
+        # 1. Telemetri Oku ve Egim Bilgisi
+        current_tilt = self.comm.tilt_angle if self.comm else 0.0
 
-        # 2. Telemetri Oku ve Lidar Menzil Kapilama
+        # 2. Kupa Tespiti (YOLOv8, anlik egime gore dinamik agiz perspektif standardizasyonu)
+        det: CupDetection = self.detector.detect(frame, tilt_deg=current_tilt)
+
+        # 3. Lidar Menzil Kapilama
         # LiDAR taret merkezinden 5.5cm onde, kupa on yuzu ise merkezinden 4.5cm ondedir.
         # Kupa merkez mesafesi = raw_dist_m + 0.10m
         cup_offset = CONFIG.cup.cup_center_offset_m
@@ -177,15 +196,16 @@ class BasketManager:
                 self.last_valid_dist_m = self.dist_m
             else:
                 self.dist_m = self.last_valid_dist_m
-            current_tilt = self.comm.tilt_angle
-        else:
-            current_tilt = 0.0
 
-        # 3. Kilit Kararliligi Kontrolu
+        # 3. Kilit Kararliligi Kontrolu (Mesafe olcekli acisal tolerans; harici sensor gerektirmez)
+        dist_scale = min(1.0, max(0.55, 1.45 / max(1.20, float(self.dist_m))))
+        eff_lock_pan_deg = CONFIG.cup.lock_tolerance_pan_deg * dist_scale
+        eff_lock_tilt_deg = CONFIG.cup.lock_tolerance_tilt_deg * dist_scale
         if det.detected:
+            self.last_err_pan_deg = float(det.err_pan_deg)
             is_close = (
-                abs(det.err_pan_deg) < CONFIG.cup.lock_tolerance_pan_deg
-                and abs(det.err_tilt_deg) < CONFIG.cup.lock_tolerance_tilt_deg
+                abs(det.err_pan_deg) < eff_lock_pan_deg
+                and abs(det.err_tilt_deg) < eff_lock_tilt_deg
             )
             if is_close:
                 self.lock_counter = min(self.MAX_LOCK_FRAMES, self.lock_counter + 1)
@@ -207,12 +227,12 @@ class BasketManager:
 
         # 4. Model 2 (RLBallistics) Balistik Cikarim
         # delta_z: Namlu ekseni ile kupa agzi arasindaki gercek dikey kot farki (trigonometrik)
-        # Kamera Z=1.102m, namlu Z=1.039m seviyesindedir (kamera namludan 0.0634m yukaridadir).
-        # Taret kupaya kilitlendiginde kamera gorus hattindan (LOS) namlu kot farki hesaplanir:
+        # Namlu Z=1.039m, kamera Z=0.982m seviyesindedir (namlu kameradan 0.0634m yukaridadir).
+        # Bu yuzden hedef kupa agzi namluya gore daha asagidadir: delta_z_m = delta_z_camera - 0.0634.
         if not self.engagement.is_active:
             import math
             tilt_rad = math.radians(current_tilt)
-            delta_z_camera = self.dist_m * math.sin(tilt_rad)
+            delta_z_camera = self.dist_m * math.tan(tilt_rad)
             delta_z_m = delta_z_camera - 0.0634
             launch_params = self.ballistics.compute_launch_parameters(self.dist_m, delta_z_m=delta_z_m)
             self.target_tilt_offset = launch_params.tilt_offset_deg
@@ -237,17 +257,27 @@ class BasketManager:
 
             if step.is_finished:
                 self.tracker.reset()
+                self.locked_dist_m = None
+                self.lock_counter = 0
+                self.is_locked = False
+                self.lock_ratio = 0.0
+                self.pending_pan_trim_deg = 0.0
                 if on_event_cb:
                     on_event_cb("[SYS] RECOVERED - READY FOR NEXT THROW", (255, 215, 0))
 
+            pan_trim = self.pending_pan_trim_deg
+            self.pending_pan_trim_deg = 0.0
             if self.comm:
                 active_spd = step.active_fire_speed
                 spd_pwm = self.compute_flywheel_pwm(active_spd) if step.cmd_state in (STATE_LOCKED, STATE_FIRING) else 0.0
-                self.comm.send_command(0.0, step.step_tilt, speed_pwm=spd_pwm, state=step.cmd_state)
+                eff_step_pan = -pan_trim if CONFIG.hardware.pan_invert else pan_trim
+                eff_step_tilt = -step.step_tilt if CONFIG.hardware.tilt_invert else step.step_tilt
+                self.comm.send_command(eff_step_pan, eff_step_tilt, speed_pwm=spd_pwm, state=step.cmd_state)
 
         else:
             # Normal Takip Modu
             if det.detected:
+                self.target_lost_counter = 0
                 cx, cy = det.center_px
                 d_pan, d_tilt, _ = self.tracker.compute(
                     cx=float(cx),
@@ -266,7 +296,9 @@ class BasketManager:
                 if self.comm:
                     self.comm.send_command(eff_pan, eff_tilt, speed_pwm=spd_pwm, state=cmd_state)
             else:
-                self.tracker.on_target_lost()
+                self.target_lost_counter += 1
+                if self.target_lost_counter >= 10:
+                    self.tracker.on_target_lost()
                 if self.comm:
                     self.comm.send_command(0.0, 0.0, speed_pwm=0.0, state=STATE_TRACKING)
 
@@ -290,5 +322,6 @@ class BasketManager:
             lock_ratio=self.lock_ratio,
             speed_mps=disp_speed,
             tilt_offset_deg=disp_tilt,
+            center_px=det.center_px if det.detected else None,
         )
 

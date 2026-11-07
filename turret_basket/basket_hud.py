@@ -342,89 +342,26 @@ class BasketHUD:
         is_estop: bool = False,
         lock_ratio: float = 0.0,
         speed_mps: float = 10.0,
-        tilt_offset_deg: float = 6.0
+        tilt_offset_deg: float = 6.0,
+        center_px: Optional[Tuple[int, int]] = None,
     ) -> np.ndarray:
-        """Kare uzerine dengeli, kompakt sivil robotik tasarim dilinde HUD cizer."""
-        out = frame.copy()
-        h, w = out.shape[:2]
-        cx, cy = w // 2, h // 2
+        """Kare uzerine BasketPresenter uzerinden kompakt sivil robotik tasarim dilinde HUD cizer."""
+        from turret_basket.basket_manager import BasketStatus
+        from turret_basket.presenter import BasketPresenter
 
-        # 1. Sivillestirilmis Durum Metni ve Rengi
-        if is_estop:
-            status_text = "SAFETY STOP"
-            status_color = self.C_RED
-        elif firing:
-            status_text = "THROWING DART"
-            status_color = self.C_AMBER
-        elif is_locked:
-            status_text = "CUP ALIGNED"
-            status_color = self.C_GREEN
-        elif cup_detected:
-            status_text = "ALIGNING CUP"
-            status_color = self.C_AMBER
-        else:
-            status_text = "SCANNING"
-            status_color = (130, 140, 150)
-
-        # 2. Kupa Hedef Cercevesi ve Takip Cizgisi
-        if cup_detected and bbox and not is_estop:
-            x1, y1, x2, y2 = bbox
-            bx = (x1 + x2) // 2
-            by = int(y1 + (y2 - y1) * 0.12)  # A Yontemi: Dogrudan kupa agiz elipsine kilitlenme
-
-            box_color = self.C_GREEN if is_locked else self.C_AMBER
-            label = "CUP"
-            self.draw_corner_box(out, x1, y1, x2, y2, box_color, length=12, thickness=1, label=label)
-
-            # Kilitlenene kadar cismin merkez noktasi ve takip cizgisi gozukur; kilitlenince kaybolur
-            if not is_locked and not firing:
-                cv2.line(out, (cx, cy), (bx, by), (80, 90, 100), 1, cv2.LINE_AA)
-                cv2.circle(out, (bx, by), 2, box_color, -1)
-
-        # 3. Merkez Nisangah ve Hizalanma Dolum Bari (Zarif, sivil ince vizor)
-        reticle_color = self.C_RED if is_estop else (self.C_GREEN if is_locked else (self.C_AMBER if cup_detected else (240, 215, 120)))
-        self.draw_reticle(out, cx, cy, reticle_color)
-        if cup_detected and not is_estop:
-            self.draw_lock_bar(out, cx, cy, lock_ratio, is_locked)
-
-        # 4. Sol Ust, Sag Ust ve Ust Banner (Kilitliyken veya atistayken gizlenir, sadece merkez panel kalir)
-        if not (is_locked or firing):
-            # Ust Orta Banner: [RL CONTROLLER]
-            self.draw_mode_banner(out, is_locked=is_locked, firing=firing)
-
-            # Sol Ust Telemetri Paneli (turret_fcs ile birebir ayni konum ve tasarim)
-            self.draw_telemetry(
-                out,
-                status_text=status_text,
-                status_color=status_color,
-                dist_m=distance_m,
-                err_pan=err_pan_deg,
-                err_tilt=err_tilt_deg,
-                target_detected=cup_detected and not is_estop
-            )
-
-            # Sag Ust FPS (turret_fcs ile birebir ayni)
-            fps_text = f"FPS: {int(round(fps))}"
-            (fps_w, _), _ = cv2.getTextSize(fps_text, self.font, 0.50, 2)
-            fps_color = (0, 255, 0) if fps >= 25.0 else (0, 165, 255)
-            cv2.putText(out, fps_text, (w - fps_w - 18, 26), self.font, 0.50, fps_color, 2, cv2.LINE_AA)
-
-            # Sol Alt Olay Gunlugu
-            self.draw_event_log(out, max_lines=4, is_locked=is_locked, firing=firing)
-
-        # 5. Hedefe Kilitlendiginde Acilan Merkez Atis Paneli (SADECE bu panel odakli kalir)
-        if (is_locked or firing) and not is_estop:
-            self.draw_combat_panel(
-                out,
-                cx=cx,
-                cy=cy,
-                dist_m=distance_m,
-                speed_mps=speed_mps,
-                tilt_offset_deg=tilt_offset_deg,
-                firing=firing
-            )
-
-        # 6. Alt Operator Tus Bilgisi
-        self.draw_footer(out, is_locked=is_locked, firing=firing, is_estop=is_estop)
-
-        return out
+        status = BasketStatus(
+            cup_detected=cup_detected,
+            bbox=bbox,
+            confidence=confidence,
+            distance_m=distance_m,
+            err_pan_deg=err_pan_deg,
+            err_tilt_deg=err_tilt_deg,
+            is_locked=is_locked,
+            firing=firing,
+            is_estop=is_estop,
+            lock_ratio=lock_ratio,
+            speed_mps=speed_mps,
+            tilt_offset_deg=tilt_offset_deg,
+            center_px=center_px,
+        )
+        return BasketPresenter(self).render(frame=frame, status=status, fps=fps)

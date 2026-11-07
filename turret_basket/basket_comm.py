@@ -35,6 +35,9 @@ from turret_basket.protocol import (
 )
 
 
+_ZERO_CMD_EPS = 1e-9
+
+
 class FCSCommunicator:
     """STM32 mikrodenetleyici ile ikili paket uzerinden konusan iletisim sinifi."""
 
@@ -70,8 +73,10 @@ class FCSCommunicator:
             return None
         ports = list(serial.tools.list_ports.comports())
         for p in ports:
-            # STMicroelectronics VID: 0483
-            if getattr(p, "vid", None) == 0x0483 or "STLink" in (p.description or ""):
+            # STMicroelectronics VID: 0483 veya STLink
+            desc = (p.description or "").lower()
+            hwid = (getattr(p, "hwid", "") or "").lower()
+            if getattr(p, "vid", None) == 0x0483 or "0483:" in hwid or "stlink" in desc or "stm" in desc:
                 return p.device
         if ports:
             return ports[0].device
@@ -85,20 +90,35 @@ class FCSCommunicator:
             return False
         self.last_reconnect_attempt = now
 
-        target_port = self.port or self._find_port()
+        # Kullanici acikca port verdiyse ve sistemde mevcutsa onu dene; degilse ST-Link'i otonom ara
+        target_port = None
+        try:
+            available = [p.device.upper() for p in serial.tools.list_ports.comports()]
+            if self.port and self.port.upper() in available:
+                target_port = self.port
+        except Exception:
+            pass
+
+        if not target_port:
+            target_port = self._find_port()
         if not target_port:
             return False
 
         try:
-            self.ser = serial.Serial(target_port, self.baudrate, timeout=0.01)
-            self._rx_buffer.clear()
+            with self._lock:
+                if self.ser and self.ser.is_open:
+                    self.ser.close()
+                self.ser = serial.Serial(target_port, self.baudrate, timeout=0.02, write_timeout=0.04)
+                self._rx_buffer.clear()
             return True
         except Exception:
-            self.ser = None
+            with self._lock:
+                self.ser = None
             return False
 
     def is_connected(self):
-        return bool(self.ser and self.ser.is_open and (time.time() - self.last_rx_time < self.stale_timeout))
+        with self._lock:
+            return bool(self.ser and self.ser.is_open and (time.time() - self.last_rx_time < self.stale_timeout))
 
     def send_command(
         self,
@@ -108,18 +128,25 @@ class FCSCommunicator:
         state: int = STATE_TRACKING,
     ):
         """STM32'ye 0.1 derece cozunurlukte goreli hareket, TB6612FNG PWM devri ve ates komutu yollar."""
+        # Artik biriktirici (0.1 derece alti adimlar kaybolmaz, sifir komutta sifirlanir)
+        if abs(float(delta_pan_deg)) < _ZERO_CMD_EPS:
+            self._accum_pan = 0.0
+            pan_ticks = 0
+        else:
+            self._accum_pan += float(delta_pan_deg)
+            pan_ticks = int(round(self._accum_pan * ANGLE_SCALE))
+            self._accum_pan -= (pan_ticks / ANGLE_SCALE)
+
+        if abs(float(delta_tilt_deg)) < _ZERO_CMD_EPS:
+            self._accum_tilt = 0.0
+            tilt_ticks = 0
+        else:
+            self._accum_tilt += float(delta_tilt_deg)
+            tilt_ticks = int(round(self._accum_tilt * ANGLE_SCALE))
+            self._accum_tilt -= (tilt_ticks / ANGLE_SCALE)
+
         if not self.ser or not self.ser.is_open:
             return False
-
-        # Artik biriktirici (0.1 derece alti adimlar kaybolmaz)
-        self._accum_pan += delta_pan_deg
-        self._accum_tilt += delta_tilt_deg
-
-        pan_ticks = int(round(self._accum_pan * ANGLE_SCALE))
-        tilt_ticks = int(round(self._accum_tilt * ANGLE_SCALE))
-
-        self._accum_pan -= (pan_ticks / ANGLE_SCALE)
-        self._accum_tilt -= (tilt_ticks / ANGLE_SCALE)
 
         spd_byte = int(max(0, min(255, round(speed_pwm)))) & 0xFF
 
@@ -129,14 +156,19 @@ class FCSCommunicator:
         packet = payload + bytes([checksum])
 
         try:
-            self.ser.write(packet)
-            return True
+            with self._lock:
+                if self.ser and self.ser.is_open:
+                    self.ser.write(packet)
+                    return True
+            return False
         except Exception:
-            try:
-                self.ser.close()
-            except Exception:
-                pass
-            self.ser = None
+            with self._lock:
+                try:
+                    if self.ser:
+                        self.ser.close()
+                except Exception:
+                    pass
+                self.ser = None
             return False
 
     def trigger_fire(self):
@@ -184,17 +216,21 @@ class FCSCommunicator:
                         self._rx_buffer.pop(0)
 
             except Exception:
-                try:
-                    self.ser.close()
-                except Exception:
-                    pass
-                self.ser = None
+                with self._lock:
+                    try:
+                        if self.ser:
+                            self.ser.close()
+                    except Exception:
+                        pass
+                    self.ser = None
                 time.sleep(0.1)
 
     def close(self):
         self.running = False
-        if self.ser and self.ser.is_open:
-            try:
-                self.ser.close()
-            except Exception:
-                pass
+        with self._lock:
+            if self.ser and self.ser.is_open:
+                try:
+                    self.ser.close()
+                except Exception:
+                    pass
+            self.ser = None

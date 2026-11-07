@@ -94,5 +94,5 @@ class RLBallistics:
     ) -> float:
         """Model 2'nin hesapladigi mutlak atis egim acisini mekanik sinirlarla dondurur."""
         margin = self.default_parallax_margin_deg if parallax_margin_deg is None else parallax_margin_deg
-        return float(np.clip(tilt_offset_deg + margin, 5.0, 25.0))
+        return float(np.clip(tilt_offset_deg + margin, self.tilt_min, self.tilt_max))
 

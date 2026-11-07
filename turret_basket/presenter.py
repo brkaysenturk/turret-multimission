@@ -12,6 +12,7 @@ import cv2
 import numpy as np
 
 from turret_basket.basket_manager import BasketStatus
+from turret_basket.config import CONFIG
 
 
 class BasketPresenter:
@@ -51,8 +52,11 @@ class BasketPresenter:
         # 2. Kupa Hedef Cercevesi ve Takip Cizgisi
         if status.cup_detected and status.bbox and not status.is_estop:
             x1, y1, x2, y2 = status.bbox
-            bx = (x1 + x2) // 2
-            by = int(y1 + (y2 - y1) * 0.12)  # A Yontemi: Dogrudan kupa agiz elipsine kilitlenme
+            if getattr(status, "center_px", None) and status.center_px[0] > 0:
+                bx, by = status.center_px
+            else:
+                bx = (x1 + x2) // 2
+                by = int(round(y1 + (y2 - y1) * CONFIG.cup.aim_mouth_ratio))
 
             box_color = self.hud.C_GREEN if status.is_locked else self.hud.C_AMBER
             label = "CUP"

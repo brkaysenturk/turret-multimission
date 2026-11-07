@@ -56,14 +56,16 @@ class CupDetector:
         self.lost_frames = 0
         self.MAX_LOST_FRAMES = 8
 
-        # Kupa agzina kilitlenme orani (A Yontemi: Kutu tepesinin %12 alti = tam agiz elipsi)
-        params_file = Path(__file__).resolve().parent / "models" / "cup_tracker_params.json"
-        self.aim_mouth_ratio = 0.12
+        # Kupa agzina kilitlenme orani (Standart: Kutu tepesinin %10 alti = tam agiz elipsi)
+        params_file = Path(__file__).resolve().parent.parent / "rl" / "models" / "cup_tracker_params.json"
+        self.aim_mouth_ratio = CONFIG.cup.aim_mouth_ratio
         if params_file.exists():
             try:
                 with open(params_file, "r", encoding="utf-8") as f:
                     p = json.load(f)
-                    self.aim_mouth_ratio = float(p.get("aim_mouth_ratio", 0.12))
+                    if "aim_mouth_ratio" in p:
+                        val = float(p.get("aim_mouth_ratio", CONFIG.cup.aim_mouth_ratio))
+                        self.aim_mouth_ratio = val if (0.04 <= val <= 0.16) else CONFIG.cup.aim_mouth_ratio
             except Exception:
                 pass
 
@@ -72,8 +74,14 @@ class CupDetector:
         self.smooth_box = None
         self.lost_frames = 0
 
-    def detect(self, frame: np.ndarray) -> CupDetection:
-        """Kare uzerinde kupa tespiti yapar, kutuyu EMA ile filtreler ve nisan hatalarini hesaplar."""
+    def detect(self, frame: np.ndarray, tilt_deg: Optional[float] = None) -> CupDetection:
+        """Kare uzerinde kupa tespiti yapar, kutuyu EMA ile filtreler ve nisan hatalarini hesaplar.
+        
+        Args:
+            frame: BGR goruntu matrisi
+            tilt_deg: Taret anlik dikey egim acisi (derece). Verilirse kamera baxis acisina gore
+                      agiz elipsi merkezini perspektif olarak dinamik standardize eder.
+        """
         if self.model is None or frame is None or frame.size == 0:
             return CupDetection()
 
@@ -125,13 +133,16 @@ class CupDetector:
                 return CupDetection(detected=False)
 
         # ---------------------------------------------------------------------
-        # Kupa Agzi Elipsinin Merkez Koordinati
+        # Kupa Agzi Elipsinin Merkez Koordinati (Standart Kararli Oran)
         # ---------------------------------------------------------------------
-        # Kulplu kupanın ağzı kutunun en üstünden (y1) belirli bir oranda (aim_mouth_ratio) aşağıdadır
+        # Kulplu kupanın ağzı kutunun en üstünden (y1) standart oranda (aim_mouth_ratio = %10) aşağıdadır.
+        # Sabit oran kullanılarak taret eğimi ile hedefleme arasında geri besleme döngüsü engellenir.
+        effective_ratio = self.aim_mouth_ratio
+
         cup_w = x2 - x1
         cup_h = y2 - y1
         aim_x = x1 + (cup_w / 2.0)
-        aim_y = y1 + (cup_h * self.aim_mouth_ratio)
+        aim_y = y1 + (cup_h * effective_ratio)
 
         # Ekran merkezine göre normalize hata [-1.0, 1.0]
         err_x_norm = (aim_x - cx_screen) / cx_screen

@@ -152,16 +152,11 @@ def solve_rk4_trajectory(
 
 
 
-        # 2. Bardagin On Govde/Kenar Duvari Engeli (Dis cap ile ic cap arasi 8mm et kalinligi)
-
-        # Dart tam on kenar girisine geldiginde yuksekligi agiz seviyesinin altindaysa on duvara carpar!
-
-        if (dist_m - cup_outer_r) <= x <= (dist_m - cup_inner_r):
-
+        # 2. Bardagin On Govde/Kenar Duvari Engeli (On dis kenar girisi)
+        # Dart tam on kenar girisine ulastiginda yuksekligi agiz seviyesinin altindaysa on duvara carpar!
+        if (dist_m - cup_outer_r) <= x < (dist_m - cup_outer_r + 0.005):
             if y < rim_rel_y:
-
                 hit_front_lip = True
-
                 break
 
 
@@ -247,19 +242,12 @@ class BallisticBasketEnv(gym.Env):
 
 
         # Kupa mesafesini rastgele sec (1.15 metre ile 2.85 metre arasi)
-
-        # A Yontemi (Direct Rim Locking): Taret dogrudan kupa agzina kilitlendiginden optik yukseklik ofseti 0.0'dir
-
+        # Masa yukseklik ofsetini rastgele sec (-0.30m alcak sehpa ile +0.22m yuksek masa arasi)
         if self.domain_randomization:
-
             self.cup_distance_m = float(self.np_random.uniform(1.15, 2.85))
-
-            self.cup_height_offset_m = 0.0
-
+            self.cup_height_offset_m = float(self.np_random.uniform(-0.30, 0.22))
         else:
-
             self.cup_distance_m = 2.0
-
             self.cup_height_offset_m = 0.0
 
 
@@ -327,48 +315,32 @@ class BallisticBasketEnv(gym.Env):
 
         theta_launch_rad = math.radians(tilt_offset_deg)
 
-
+        # CAD v10: Namlu dunya yuksekligi 1.0387m, bardak agzi 0.8165m, bardak ici dibi 0.725m
+        # Masa yukseklik ofsetini fiziksel olarak dinamik ekle:
+        cur_table_y = -0.3287 + self.cup_height_offset_m
+        cur_rim_y = -0.2222 + self.cup_height_offset_m
+        cur_bottom_y = -0.3137 + self.cup_height_offset_m
+        target_mouth_y = cur_rim_y - 0.015
 
         final_y, t_flight, v_end, vy, apex_y, hit_table, hit_front_lip = solve_rk4_trajectory(
-
             dist_m=self.cup_distance_m,
-
             v0=v0,
-
             theta_launch_rad=theta_launch_rad,
-
+            table_rel_y=cur_table_y,
+            rim_rel_y=cur_rim_y,
+            bottom_rel_y=cur_bottom_y,
             k_drag=k_drag
-
         )
-
-
-
-        # CAD v10: Namlu dunya yuksekligi 1.0387m, bardak agzi 0.8165m, bardak ici dibi 0.725m
-
-        rim_rel_y = -0.2222    # (0.8165m - 1.0387m)
-
-        bottom_rel_y = -0.3137 # (0.7250m - 1.0387m)
-
-        target_mouth_y = rim_rel_y - 0.010 + self.cup_height_offset_m
 
         vertical_miss_m = abs(final_y - target_mouth_y)
 
-
-
         # BASKET KONTROLU (Gercek Webots Katı Cisim Dart Fiziği):
-
         # 1. Masaya çarpmamış olmalı (hit_table == False)
-
         # 2. Bardağın ön gövdesine/kenar duvarına çarpmamış olmalı (hit_front_lip == False)
-
-        # 3. Dart bardağın ağız çemberinden içeri girmiş olmalı (bottom_rel_y <= final_y <= rim_rel_y)
-
+        # 3. Dart bardağın ağız çemberinden içeri girmiş olmalı (cur_bottom_y <= final_y <= cur_rim_y)
         # 4. Dart yukarıdan aşağıya dik inmeli (vy < -0.30 m/s)
-
-        is_in_mouth = (bottom_rel_y <= final_y <= rim_rel_y)
-
+        is_in_mouth = (cur_bottom_y <= final_y <= cur_rim_y)
         is_descending = (vy < -0.30)
-
         is_basket = (not hit_table) and (not hit_front_lip) and is_in_mouth and is_descending
 
 

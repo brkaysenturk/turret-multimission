@@ -93,9 +93,11 @@ class RLTracker:
             dt=float(dt),
         )
 
-        # Hedefe kilitlenme kriteri: Ekran merkezine acisal yakinlik (Pan < 1.5 deg, Tilt < 1.6 deg)
+        # Hedefe kilitlenme kriteri: Uzak mesafede kupa agzinin acisal capi kuculdugu icin
+        # menzil uzadikca kilit penceresi orantili daraltilir (sensor gerektirmez, salt kamera + LiDAR).
+        dist_scale = min(1.0, max(0.55, 1.45 / max(1.20, float(distance_m))))
         err_x_ratio = abs(cx - center_x) / (screen_w / 2.0)
         err_y_ratio = abs(cy - center_y) / (screen_h / 2.0)
-        is_locked = (err_x_ratio < 0.065 and err_y_ratio < 0.085)
+        is_locked = (err_x_ratio < (0.045 * dist_scale) and err_y_ratio < (0.065 * dist_scale))
 
         return float(d_pan), float(d_tilt), is_locked

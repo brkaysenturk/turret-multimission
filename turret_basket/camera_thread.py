@@ -19,6 +19,17 @@ class CameraThread:
 
     def __init__(self, src=None, width=None, height=None, fps=None):
         self.src = CONFIG.camera.device_id if src is None else src
+        if self.src is None:
+            try:
+                from turret_fcs.camera_thread import CameraThread as FCSCameraThread
+                det_idx, _ = FCSCameraThread.detect_camera(
+                    preferred_name=CONFIG.camera.camera_name_substr,
+                    backend="dshow"
+                )
+                self.src = det_idx
+            except Exception:
+                self.src = 0
+
         self.width = CONFIG.camera.width if width is None else width
         self.height = CONFIG.camera.height if height is None else height
         self.fps = CONFIG.camera.fps if fps is None else fps

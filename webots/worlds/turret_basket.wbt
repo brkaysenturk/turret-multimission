@@ -1,1504 +1,490 @@
 #VRML_SIM R2025a utf8
 
-
-
 EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2025a/projects/objects/backgrounds/protos/TexturedBackground.proto"
-
 EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2025a/projects/objects/backgrounds/protos/TexturedBackgroundLight.proto"
-
 EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2025a/projects/objects/tables/protos/Desk.proto"
-
 EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2025a/projects/objects/floors/protos/RectangleArena.proto"
-
 EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2025a/projects/appearances/protos/BrushedAluminium.proto"
-
 EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2025a/projects/appearances/protos/Parquetry.proto"
 
-
-
 WorldInfo {
-
   basicTimeStep 4
-
   contactProperties [
-
     ContactProperties {
-
       material1 "dart_foam"
-
       material2 "balloon_rubber"
-
       coulombFriction [
-
         0.5
-
       ]
-
       bounce 0.6
-
     }
-
     ContactProperties {
-
       material1 "dart_foam"
-
       material2 "cup_ceramic"
-
       coulombFriction [
-
         0.9
-
       ]
-
       bounce 0.01
-
       bounceVelocity 0.5
-
     }
-
     ContactProperties {
-
       material1 "dart_foam"
-
       material2 "dart_foam"
-
       coulombFriction [
-
         0.9
-
       ]
-
       bounce 0.01
-
       bounceVelocity 0.5
-
     }
-
     ContactProperties {
-
       material1 "dart_foam"
-
-      material2 "default"
-
       coulombFriction [
-
         0.8
-
       ]
-
       bounce 0.02
-
       bounceVelocity 0.5
-
     }
-
   ]
-
 }
-
 Viewpoint {
-
-  orientation -0.15908933957162166 0.1346804263405314 0.978034643964823 1.7584564345709608
-
-  position 0.29064437139397464 -1.9396607150975262 1.3945234709448828
-
+  orientation -0.1922161011575412 0.34501486111184465 0.918704368155376 1.090258882297948
+  position -2.483026925785718 -2.5306510117814947 2.320238417363035
   followType "None"
-
 }
-
 TexturedBackground {
-
 }
-
 TexturedBackgroundLight {
-
 }
-
 DirectionalLight {
-
   ambientIntensity 0.35
-
   direction 0.25 1 -0.6
-
   intensity 2.5
-
   castShadows TRUE
-
 }
-
 Desk {
-
 }
-
 Robot {
-
-
-
   translation 0 0 0.71
-
-
-
   children [
-
-
-
     HingeJoint {
-
-
-
       jointParameters HingeJointParameters {
-
-
-
         axis 0 0 1
-
-
-
         anchor 0 0 0.1152
-
-
-
       }
-
-
-
       device [
-
-
-
         PositionSensor {
-
-
-
           name "pan_sensor"
-
-
-
         }
-
-
-
         RotationalMotor {
-
-
-
           name "pan_motor"
-
-
-
           acceleration 25
-
-
-
           controlPID 30 0 0.3
-
-
-
           maxVelocity 1.5
-
-
-
           minPosition -1.309
-
-
-
           maxPosition 1.309
-
-
-
           maxTorque 1
-
-
-
         }
-
-
-
       ]
-
-
-
       endPoint Solid {
-
-
-
         translation 0 0 0.1152
-
-
-
         children [
-
-
-
           HingeJoint {
-
-
-
             jointParameters HingeJointParameters {
-
-
-
-              axis 1 0 0
-
-
-
               anchor 0 0 0.1879
-
-
-
             }
-
-
-
             device [
-
-
-
               PositionSensor {
-
-
-
                 name "tilt_sensor"
-
-
-
               }
-
-
-
               RotationalMotor {
-
-
-
                 name "tilt_motor"
-
-
-
                 acceleration 25
-
-
-
                 controlPID 30 0 0.3
-
-
-
                 maxVelocity 1.5
-
-
-
                 minPosition -0.4363
-
-
-
-                maxPosition 0.4363
-
-
-
+                maxPosition 0.5236
                 maxTorque 1
-
-
-
               }
-
-
-
             ]
-
-
-
             endPoint DEF KAFA_BLOGU Solid {
-
-
-
               translation 0 0 0.1879
-
-
-
+              rotation 1 0 0 0
               children [
-
-
-
                 Shape {
-
-
-
                   appearance PBRAppearance {
-
-
-
                     baseColor 0.28 0.52 0.35
-
-
-
                     roughness 0.4
-
-
-
                     metalness 0.1
-
-
-
                   }
-
-
-
                   geometry Mesh {
-
-
-
                     url [
-
-
-
                       "turret_cad_v10/turret_head.obj"
-
-
-
                     ]
-
-
-
                   }
-
-
-
                 }
-
-
-
                 HingeJoint {
-
-
-
                   jointParameters HingeJointParameters {
-
-
-
                     axis 0 0 1
-
-
-
                     anchor -0.0206 0.0416 0.0256
-
-
-
                   }
-
-
-
                   device [
-
-
-
                     RotationalMotor {
-
-
-
                       name "flywheel_left"
-
-
-
                       acceleration 2000
-
-
-
                       maxVelocity 3000
-
-
-
                     }
-
-
-
                   ]
-
-
-
                   endPoint Solid {
-
-
-
                     translation -0.0206 0.0416 0.0256
-
-
-
                     children [
-
-
-
                       Shape {
-
-
-
                         appearance PBRAppearance {
-
-
-
                           baseColor 0.95 0.95 0.98
-
-
-
                           roughness 0.2
-
-
-
                           metalness 0.1
-
-
-
                         }
-
-
-
                         geometry Cylinder {
-
-
-
                           height 0.01
-
-
-
                           radius 0.015
-
-
-
                         }
-
-
-
                       }
-
-
-
                     ]
-
-
-
                     name "flywheel_wheel_left"
-
-
-
                   }
-
-
-
                 }
-
-
-
                 HingeJoint {
-
-
-
                   jointParameters HingeJointParameters {
-
-
-
                     axis 0 0 1
-
-
-
                     anchor 0.0206 0.0416 0.0256
-
-
-
                   }
-
-
-
                   device [
-
-
-
                     RotationalMotor {
-
-
-
                       name "flywheel_right"
-
-
-
                       acceleration 2000
-
-
-
                       maxVelocity 3000
-
-
-
                     }
-
-
-
                   ]
-
-
-
                   endPoint Solid {
-
-
-
                     translation 0.0206 0.0416 0.0256
-
-
-
                     children [
-
-
-
                       Shape {
-
-
-
                         appearance PBRAppearance {
-
-
-
                           baseColor 0.95 0.95 0.98
-
-
-
                           roughness 0.2
-
-
-
                           metalness 0.1
-
-
-
                         }
-
-
-
                         geometry Cylinder {
-
-
-
                           height 0.01
-
-
-
                           radius 0.015
-
-
-
                         }
-
-
-
                       }
-
-
-
                     ]
-
-
-
                     name "flywheel_wheel_right"
-
-
-
                   }
-
-
-
                 }
-
-
-
                 SliderJoint {
-
-
-
                   jointParameters JointParameters {
-
-
-
                     axis 0 1 0
-
-
-
                   }
-
-
-
                   device [
-
-
-
                     LinearMotor {
-
-
-
                       name "solenoid"
-
-
-
                       maxVelocity 2
-
-
-
                       maxPosition 0.06
-
-
-
                     }
-
-
-
                     PositionSensor {
-
-
-
                       name "solenoid_sensor"
-
-
-
                     }
-
-
-
                   ]
-
-
-
                   endPoint Solid {
-
-
-
-                    translation 0 -0.040 0
-
-
-
+                    translation 0 -0.04 0
                     children [
-
-
-
                       Pose {
-
-
-
                         rotation 1 0 0 1.5708
-
-
-
                         children [
-
-
-
                           Shape {
-
-
-
                             appearance PBRAppearance {
-
-
-
                               baseColor 0.2 0.2 0.22
-
-
-
                               roughness 0.6
-
-
-
                               metalness 0.7
-
-
-
                             }
-
-
-
                             geometry Cylinder {
-
-
-
                               height 0.025
-
-
-
                               radius 0.01
-
-
-
                             }
-
-
-
                           }
-
-
-
                         ]
-
-
-
                       }
-
-
-
                     ]
-
-
-
                     name "solenoid_plunger"
-
-
-
                   }
-
-
-
                 }
-
-
-
                 DistanceSensor {
-
-
-
                   translation 0 0.055 -0.0644
-
-
-
                   rotation 0 0 1 1.5708
-
-
-
                   children [
-
-
-
                     Transform {
-
-
-
                       translation 0.01 0 0
-
-
-
                       rotation -0.5773500897298334 0.577350358919501 0.577350358919501 -2.0944
-
-
-
                       scale 0.001 0.001 0.001
-
-
-
                       children [
-
-
-
                         Shape {
-
-
-
                           appearance PBRAppearance {
-
-
-
                             baseColor 0.427451 0.427451 0.427451
-
-
-
                           }
-
-
-
                           geometry Mesh {
-
-
-
                             url [
-
-
-
                               "tf_luna/TF-Luna 3D structure.obj"
-
-
-
                             ]
-
-
-
                           }
-
-
-
                         }
-
-
-
                       ]
-
-
-
                     }
-
-
-
                   ]
-
-
-
                   name "tf_luna"
-
-
-
                   lookupTable [
-
-
-
                     0 0 0
-
-
-
                     8 8 0
-
-
-
                   ]
-
-
-
                   type "laser"
-
-
-
                   aperture 0.01
-
-
-
                 }
-
-
-
                 Camera {
-
-
-
                   translation 0 0.055 -0.0314
-
-
-
                   rotation 0 0 1 1.5708
-
-
-
                   children [
-
-
-
                     Transform {
-
-
-
                       translation 0 -0.008 0.01
-
-
-
                       rotation 0 -0.7071067811865476 -0.7071067811865476 -3.1415853071795863
-
-
-
                       scale 0.001 0.001 0.001
-
-
-
                       children [
-
-
-
                         Shape {
-
-
-
                           appearance PBRAppearance {
-
-
-
                             baseColor 0.545098 0.545098 0.545098
-
-
-
                           }
-
-
-
                           geometry Mesh {
-
-
-
                             url [
-
-
-
                               "logitech_c270/Logitech C270 Chip v2.0.obj"
-
-
-
                             ]
-
-
-
                           }
-
-
-
                           castShadows FALSE
-
-
-
                         }
-
-
-
                       ]
-
-
-
                     }
-
-
-
                   ]
-
-
-
                   name "c270"
-
-
-
                   fieldOfView 0.8517
-
-
-
                   width 1280
-
-
-
                   height 720
-
-
-
                 }
-
-
-
               ]
-
-
-
               name "kafa_blogu"
-
-
-
               boundingObject Pose {
-
-
-
                 translation 0.0078 -0.0245 -0.0095
-
-
-
                 children [
-
-
-
                   Box {
-
-
-
-                    size 0.118 0.180 0.149
-
-
-
+                    size 0.118 0.18 0.149
                   }
-
-
-
                 ]
-
-
-
               }
-
-
-
               physics Physics {
-
-
-
                 density -1
-
-
-
                 mass 0.44
-
-
-
                 centerOfMass [
-
-
-
                   0 0.0196 0.004
-
-
-
                 ]
-
-
-
               }
-
-
-
             }
-
-
-
           }
-
-
-
           Shape {
-
-
-
             appearance PBRAppearance {
-
-
-
               baseColor 0.42 0.38 0.46
-
-
-
               roughness 0.5
-
-
-
               metalness 0.1
-
-
-
             }
-
-
-
             geometry Mesh {
-
-
-
               url [
-
-
-
                 "turret_cad_v10/turret_fork.obj"
-
-
-
               ]
-
-
-
             }
-
-
-
           }
-
-
-
         ]
-
-
-
         name "donen_tabla"
-
-
-
         boundingObject Pose {
-
-
-
           translation -0.0188 0 0.0954
-
-
-
           children [
-
-
-
             Box {
-
-
-
-              size 0.171 0.118 0.210
-
-
-
+              size 0.171 0.118 0.21
             }
-
-
-
           ]
-
-
-
         }
-
-
-
         physics Physics {
-
-
-
           density -1
-
-
-
           mass 0.16
-
-
-
         }
-
-
-
       }
-
-
-
     }
-
-
-
     Solid {
-
-
-
-      translation 0 0 0
-
-
-
       children [
-
-
-
         Shape {
-
-
-
           appearance PBRAppearance {
-
-
-
             baseColor 0.22 0.22 0.25
-
-
-
             roughness 0.6
-
-
-
             metalness 0.1
-
-
-
           }
-
-
-
           geometry Mesh {
-
-
-
             url [
-
-
-
               "turret_cad_v10/turret_base.obj"
-
-
-
             ]
-
-
-
           }
-
-
-
         }
-
-
-
       ]
-
-
-
       name "sabit_taban"
-
-
-
       boundingObject Pose {
-
-
-
         translation 0 0 0.0576
-
-
-
         children [
-
-
-
           Box {
-
-
-
             size 0.25 0.25 0.1152
-
-
-
           }
-
-
-
         ]
-
-
-
       }
-
-
-
     }
-
-
-
   ]
-
-
-
   name "turret_fcs"
-
-
-
   controller "webots_turret_basket"
-
-
-
   supervisor TRUE
-
-
-
 }
-
-
-
 DEF CUP_DESK Desk {
-
   translation 0 1.45 0
-
 }
-
 DEF CUP Robot {
-
   translation 0 1.45 0.71
-
-  rotation 0 0 1 0
-
   children [
-
-    # Google DeepMind MuJoCo Yuksek Poligonlu Seramik Kupa 3D Mesh
-
     Shape {
-
       appearance PBRAppearance {
-
         baseColor 0.85 0.12 0.12
-
         roughness 0.28
-
-        metalness 0.0
-
+        metalness 0
       }
-
       geometry Mesh {
-
         url [
-
           "cup_mug/cup.obj"
-
         ]
-
       }
-
     }
-
-    # Dip Kahve Sivisi
-
     Pose {
-
       translation 0 0 0.015
-
       children [
-
         Shape {
-
           appearance PBRAppearance {
-
             baseColor 0.22 0.12 0.06
-
             roughness 0.2
-
             metalness 0.1
-
           }
-
           geometry Cylinder {
-
             height 0.005
-
             radius 0.036
-
           }
-
         }
-
       ]
-
     }
-
-    # Basket Dokunma Sensoru
-
-    TouchSensor {
-
-      translation 0 0 0.02
-
-      children [
-
-        Shape {
-
-          appearance PBRAppearance {
-
-            baseColor 0.1 0.8 0.2
-
-            transparency 0.8
-
-          }
-
-          geometry Cylinder {
-
-            height 0.01
-
-            radius 0.040
-
-          }
-
-        }
-
-      ]
-
-      name "cup_basket_sensor"
-
-      boundingObject Cylinder {
-
-        height 0.01
-
-        radius 0.042
-
-      }
-
-      physics Physics {
-
-      }
-
-    }
-
   ]
-
   name "cup"
-
   contactMaterial "cup_ceramic"
-
   boundingObject Group {
-
     children [
-
-      # Taban
-
       Pose {
-
         translation 0 0 0.005
-
         children [
-
           Cylinder {
-
             height 0.01
-
             radius 0.052
-
           }
-
         ]
-
       }
-
-      # 8 Parcali Ici Bos Silindir Duvarlar (16 oz Starbucks Grande: 14cm yukseklik)
-
-      Pose { translation 0.046 0 0.07 children [ Box { size 0.004 0.040 0.14 } ] }
-
-      Pose { translation -0.046 0 0.07 children [ Box { size 0.004 0.040 0.14 } ] }
-
-      Pose { translation 0 0.046 0.07 children [ Box { size 0.040 0.004 0.14 } ] }
-
-      Pose { translation 0 -0.046 0.07 children [ Box { size 0.040 0.004 0.14 } ] }
-
-      Pose { translation 0.0325 0.0325 0.07 rotation 0 0 1 0.7854 children [ Box { size 0.004 0.040 0.14 } ] }
-
-      Pose { translation -0.0325 0.0325 0.07 rotation 0 0 1 -0.7854 children [ Box { size 0.004 0.040 0.14 } ] }
-
-      Pose { translation -0.0325 -0.0325 0.07 rotation 0 0 1 0.7854 children [ Box { size 0.004 0.040 0.14 } ] }
-
-      Pose { translation 0.0325 -0.0325 0.07 rotation 0 0 1 -0.7854 children [ Box { size 0.004 0.040 0.14 } ] }
-
+      Pose {
+        translation 0.046 0 0.05325
+        children [
+          Box {
+            size 0.004 0.04 0.1065
+          }
+        ]
+      }
+      Pose {
+        translation -0.046 0 0.05325
+        children [
+          Box {
+            size 0.004 0.04 0.1065
+          }
+        ]
+      }
+      Pose {
+        translation 0 0.046 0.05325
+        children [
+          Box {
+            size 0.04 0.004 0.1065
+          }
+        ]
+      }
+      Pose {
+        translation 0 -0.046 0.05325
+        children [
+          Box {
+            size 0.04 0.004 0.1065
+          }
+        ]
+      }
+      Pose {
+        translation 0.0325 0.0325 0.05325
+        rotation 0 0 1 0.7854
+        children [
+          Box {
+            size 0.004 0.04 0.1065
+          }
+        ]
+      }
+      Pose {
+        translation -0.0325 0.0325 0.05325
+        rotation 0 0 1 -0.7854
+        children [
+          Box {
+            size 0.004 0.04 0.1065
+          }
+        ]
+      }
+      Pose {
+        translation -0.0325 -0.0325 0.05325
+        rotation 0 0 1 0.7854
+        children [
+          Box {
+            size 0.004 0.04 0.1065
+          }
+        ]
+      }
+      Pose {
+        translation 0.0325 -0.0325 0.05325
+        rotation 0 0 1 -0.7854
+        children [
+          Box {
+            size 0.004 0.04 0.1065
+          }
+        ]
+      }
     ]
-
   }
-
   physics Physics {
-
     density -1
-
-    mass 0.40
-
+    mass 0.4
   }
-
   supervisor TRUE
-
 }
-
 RectangleArena {
-
   floorSize 8 8
-
   floorAppearance Parquetry {
-
     type "light strip"
-
   }
-
   wallHeight 2.5
-
   wallAppearance BrushedAluminium {
-
     colorOverride 1 0.933333 0.768627
-
   }
-
 }
-

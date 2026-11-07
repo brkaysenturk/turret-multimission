@@ -9,7 +9,7 @@ tum donanim, kamera, hedef, balistik ve RL parametrelerini icerir.
 
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 
 # Proje Koku: C:\YTU\turret-fcs\turret_fcs
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -18,13 +18,13 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 @dataclass(frozen=True)
 class CameraConfig:
     """Kamera ve optik kalibrasyon parametreleri."""
-    device_id: int = 0
+    device_id: Optional[int] = None   # None ise C270 otomatik tespit edilir
     camera_name_substr: str = "C270"
     width: int = 1280
     height: int = 720
     fps: int = 30
     h_fov_deg: float = 48.8    # Logitech C270 yatay gorunur alan
-    v_fov_deg: float = 38.0    # Logitech C270 dikey gorunur alan
+    v_fov_deg: float = 28.6    # Logitech C270 16:9 dikey gorunur alan (kare piksel uyumu)
 
     @property
     def fx(self) -> float:
@@ -68,6 +68,7 @@ class CupTargetConfig:
     target_classes: List[int] = field(default_factory=lambda: [41, 40, 39, 44])  # 41: cup, 40: wine glass, 39: bottle, 44: bowl
     confidence_threshold: float = 0.25
     ema_alpha: float = 0.80      # Sabit bardak kutu titremesini onleyen EMA
+    aim_mouth_ratio: float = 0.10  # Kupa agiz elipsi merkez orani (kutu ustunden %10)
 
     # Bardagin Fiziksel Boyutlari (metre - 16 oz Starbucks Grande Bardağı)
     mouth_diameter_m: float = 0.090   # 9.0 cm ağız dış çapı (3.5 inç)

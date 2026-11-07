@@ -23,6 +23,9 @@
 /* TB6612FNG 20 kHz PWM ARR Sabiti (84 MHz / 4200 = 20.000 Hz) */
 #define FLYWHEEL_PWM_ARR     4199u
 
+/* Soft-Start Rampa Suresi (ms) - 0'dan nominal devire yumusak artis (inrush akim korumasi) */
+#define FLYWHEEL_SOFT_START_MS 150u
+
 /* Zamanlama Ayarlari (Milisaniye) */
 #define SOLENOID_PULSE_MS    80u   /* Solenoid ileri itme enerjilenme suresi */
 #define SOLENOID_RELOAD_MS   150u  /* Yayin dart haznesini geri cekme suresi */

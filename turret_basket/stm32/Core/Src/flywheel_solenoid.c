@@ -18,6 +18,10 @@ static LauncherState_t current_state = LAUNCHER_STATE_IDLE;
 static uint32_t state_timer = 0;
 static uint8_t current_speed = 0;
 static bool flywheel_active = false;
+static uint32_t target_pulse = 0;
+static uint32_t current_pulse = 0;
+static uint32_t ramp_start_ms = 0;
+static uint32_t ramp_start_pulse = 0;
 
 static TIM_HandleTypeDef htim_flywheel;
 
@@ -79,8 +83,13 @@ void Launcher_Flywheel_SetSpeed(uint8_t speed_0_255)
     flywheel_active = (current_speed > 0);
 
     /* 0..255 arasini 0..FLYWHEEL_PWM_ARR darbe genisligine esle */
-    uint32_t pulse = ((uint32_t)current_speed * FLYWHEEL_PWM_ARR) / 255u;
-    __HAL_TIM_SET_COMPARE(&htim_flywheel, TIM_CHANNEL_2, (uint16_t)pulse);
+    uint32_t new_target = ((uint32_t)current_speed * FLYWHEEL_PWM_ARR) / 255u;
+    if (new_target != target_pulse)
+    {
+        target_pulse = new_target;
+        ramp_start_ms = HAL_GetTick();
+        ramp_start_pulse = current_pulse;
+    }
 }
 
 uint8_t Launcher_Flywheel_GetSpeed(void)
@@ -104,12 +113,16 @@ void Launcher_Flywheel_Enable(bool enable)
 
 bool Launcher_IsFlywheelActive(void)
 {
-    return flywheel_active;
+    return (flywheel_active && (target_pulse > 0) && (current_pulse >= (target_pulse * 3u / 4u)));
 }
 
 void Launcher_EmergencyStop(void)
 {
-    Launcher_Flywheel_SetSpeed(0u);
+    current_speed = 0;
+    flywheel_active = false;
+    target_pulse = 0;
+    current_pulse = 0;
+    __HAL_TIM_SET_COMPARE(&htim_flywheel, TIM_CHANNEL_2, 0);
     HAL_GPIO_WritePin(SOLENOID_GPIO_PORT, SOLENOID_PIN, GPIO_PIN_RESET);
     current_state = LAUNCHER_STATE_IDLE;
 }
@@ -121,7 +134,7 @@ bool Launcher_TriggerFire(void)
         return false;
     }
 
-    if (!flywheel_active || current_speed < 50u)
+    if (!flywheel_active || !Launcher_IsFlywheelActive() || current_speed < 50u)
     {
         return false;
     }
@@ -136,6 +149,31 @@ void Launcher_Update(void)
 {
     uint32_t now = HAL_GetTick();
 
+    /* 1. Volan Soft-Start Rampa Guncellemesi (150 ms inrush akim korumasi) */
+    if (flywheel_active && target_pulse > 0)
+    {
+        uint32_t elapsed = now - ramp_start_ms;
+        if (elapsed >= FLYWHEEL_SOFT_START_MS)
+        {
+            current_pulse = target_pulse;
+        }
+        else
+        {
+            current_pulse = ramp_start_pulse +
+                ((target_pulse - ramp_start_pulse) * elapsed) / FLYWHEEL_SOFT_START_MS;
+        }
+        __HAL_TIM_SET_COMPARE(&htim_flywheel, TIM_CHANNEL_2, (uint16_t)current_pulse);
+    }
+    else
+    {
+        if (current_pulse > 0)
+        {
+            current_pulse = 0;
+            __HAL_TIM_SET_COMPARE(&htim_flywheel, TIM_CHANNEL_2, 0);
+        }
+    }
+
+    /* 2. Solenoid Non-blocking Durum Makinesi */
     switch (current_state)
     {
         case LAUNCHER_STATE_IDLE:
