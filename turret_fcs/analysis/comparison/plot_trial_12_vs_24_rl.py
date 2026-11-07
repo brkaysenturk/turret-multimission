@@ -3,7 +3,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 
-ROOT = Path(r"C:\YTU\turret-fcs")
+ROOT = Path(__file__).resolve().parents[3]
 OUT_IMG = ROOT / "turret_fcs" / "analysis" / "comparison" / "trial_12_vs_24_rl_comparison.png"
 JSON_PATH = ROOT / "turret_fcs" / "analysis" / "comparison" / "webots_multiprofile_rl_results.json"
 

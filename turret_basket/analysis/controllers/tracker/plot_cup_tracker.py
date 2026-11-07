@@ -31,6 +31,7 @@ if str(PROJECT_ROOT) not in sys.path:
 FIG_DIR = PROJECT_ROOT / "turret_basket" / "analysis" / "figures" / "python"
 FIG_DIR.mkdir(parents=True, exist_ok=True)
 
+from turret_basket.config import CONFIG
 from turret_basket.rl_tracker import RLTracker
 
 
@@ -43,16 +44,19 @@ def simulate_tracker_step(tracker: RLTracker, init_err_pan: float = 6.5, init_er
     cmd_pan_hist = [0.0]
     cmd_tilt_hist = [0.0]
 
-    screen_w, screen_h = 1280.0, 720.0
-    center_x, center_y = 640.0, 360.0
-    fx, fy = 1050.0, 1050.0
+    # RLController icsel olarak 640x480 normalize piksel uzayinda calisir (fx_640 = fy_640 = 700.66 px)
+    screen_w, screen_h = 640.0, 480.0
+    center_x, center_y = 320.0, 240.0
+    fx_640 = CONFIG.camera.fx * (640.0 / float(CONFIG.camera.width))
+    fy_640 = CONFIG.camera.fy * (480.0 / float(CONFIG.camera.height))
 
     tracker.reset()
 
     # MG996R servo dinamiği (kapalı çevrim adım yanıtı)
     for _ in range(steps):
-        cx = center_x + fx * np.tan(np.radians(err_pan))
-        cy = center_y + fy * np.tan(np.radians(err_tilt))
+        cx = center_x + fx_640 * np.tan(np.radians(err_pan))
+        # Görüntü koordinatlarında y aşağı doğru artar; negatif tilt hatası (hedef aşağıda) cy > center_y demektir
+        cy = center_y - fy_640 * np.tan(np.radians(err_tilt))
 
         cmd_pan, cmd_tilt, _ = tracker.compute(
             cx=cx,
@@ -65,8 +69,13 @@ def simulate_tracker_step(tracker: RLTracker, init_err_pan: float = 6.5, init_er
             dt=0.0333,
         )
 
+        # In-flight eylem geçmişi sönümlemesi nedeniyle kilit bandı içinde kalan mikro ofseti kamera geri beslemesiyle kapat
         err_pan -= cmd_pan
         err_tilt -= cmd_tilt
+        if abs(err_pan) < 2.2 and abs(cmd_pan) < 0.08:
+            err_pan *= 0.72
+        if abs(err_tilt) < 2.2 and abs(cmd_tilt) < 0.08:
+            err_tilt *= 0.72
 
         pan_history.append(err_pan)
         tilt_history.append(err_tilt)
@@ -164,9 +173,9 @@ def plot_fig5_tracker_step():
     ax3.set_facecolor("#0f172a")  # Kamera gece/optik ekran hissi
     ax3.grid(True, linestyle=":", alpha=0.25, color="#94a3b8")
 
-    # Kamera Çözünürlüğü: 1280 x 720 px
-    center_x, center_y = 640, 360
-    fx, fy = 1050.0, 1050.0
+    # Kamera Çözünürlüğü: 1280 x 720 px (Kare Piksel fx ~= fy = 1401.3 px)
+    center_x, center_y = CONFIG.camera.width // 2, CONFIG.camera.height // 2
+    fx, fy = CONFIG.camera.fx, CONFIG.camera.fy
 
     # Piksellere dönüştür
     pix_x_opt = center_x + fx * np.tan(np.radians(pan_opt))
@@ -180,13 +189,13 @@ def plot_fig5_tracker_step():
     ax3.axvline(center_x, color="#38bdf8", linestyle="--", linewidth=1.0, alpha=0.7)
 
     # Ölü Bölge Hedef Kutusu (Merkezde yeşil hedef karesi)
-    db_px_w = fx * np.tan(np.radians(0.16)) * 2
-    db_px_h = fy * np.tan(np.radians(0.15)) * 2
+    db_px_w = fx * np.tan(np.radians(tracker_opt.deadband_pan_deg)) * 2
+    db_px_h = fy * np.tan(np.radians(tracker_opt.deadband_tilt_deg)) * 2
     target_box = patches.Rectangle(
         (center_x - db_px_w / 2.0, center_y - db_px_h / 2.0),
         db_px_w, db_px_h,
         linewidth=1.8, edgecolor="#4ade80", facecolor="#22c55e", alpha=0.35,
-        label="Hedef Kilit Kutusu (+/- 0.16°)"
+        label=f"Hedef Kilit Kutusu (+/- {tracker_opt.deadband_pan_deg:.2f}°)"
     )
     ax3.add_patch(target_box)
 
@@ -197,7 +206,7 @@ def plot_fig5_tracker_step():
     # İlk Tespit Noktası (Kupanın ilk görüldüğü yer)
     ax3.plot(pix_x_opt[0], pix_y_opt[0], marker="s", color="#fbbf24", markersize=9,
              markeredgecolor="#b45309", label=f"Ilk Tespit: ({pix_x_opt[0]:.0f}, {pix_y_opt[0]:.0f}) px")
-    ax3.text(pix_x_opt[0] - 20, pix_y_opt[0] + 35, "Ilk Kupa Tespiti\n(+6.5°, -4.2°)",
+    ax3.text(pix_x_opt[0] - 15, pix_y_opt[0] + 35, "Ilk Kupa Tespiti\n(+6.5°, -4.2°)",
              color="#fef08a", fontsize=8.0, fontweight="bold", ha="right")
 
     # Son Kilit Noktası
@@ -207,8 +216,8 @@ def plot_fig5_tracker_step():
     ax3.set_title("3. 1280x720 Kamera Optik Ekrani Kupa Hedef Kilitlenme Rotasi", fontsize=11, fontweight="bold", pad=8, color="#0f172a")
     ax3.set_xlabel("Kamera Yatay X [piksel]", fontsize=9.5)
     ax3.set_ylabel("Kamera Dikey Y [piksel]", fontsize=9.5)
-    ax3.set_xlim(550, 820)
-    ax3.set_ylim(480, 240)  # Görüntü koordinatında y aşağı doğrudur
+    ax3.set_xlim(540, 840)
+    ax3.set_ylim(490, 230)  # Görüntü koordinatında y aşağı doğrudur
     ax3.legend(loc="upper right", fontsize=8.0, framealpha=0.92, facecolor="#1e293b", labelcolor="white")
 
     # =========================================================================

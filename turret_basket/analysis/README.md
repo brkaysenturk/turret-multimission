@@ -48,18 +48,18 @@ turret_basket/analysis/
 
 ### 2. [python_fig2_rl_ballistics_policy_decision.png](file:///c:/YTU/turret-fcs/turret_basket/analysis/figures/python/python_fig2_rl_ballistics_policy_decision.png)
 - **Modül:** [plot_rl_ballistics.py](file:///c:/YTU/turret-fcs/turret_basket/analysis/controllers/ballistics/plot_rl_ballistics.py)
-- **İçerik:** 2. Model Balistik Karar Ajanının (`cup_ballistic_policy.npz`) 0.8m - 3.2m menzil aralığındaki kestirimleri.
-- **Kapsam:** ToF LiDAR menziline ve masa dikey kot farkına göre hesaplanan süper-elevasyon açı ofseti (+18.0° - +24.5°), fırlatma volan hızı (3.5 - 8.5 m/s), TB6612FNG PWM duty döngüsü (140 - 255 ticks) ve tepe noktası yükselişi.
+- **İçerik:** 2. Model Balistik Karar Ajanlarının (`cup_ballistic_policy.npz` ve `webots_ballistic_policy.npz`) 0.8m - 3.2m menzil aralığındaki kestirimleri.
+- **Kapsam:** ToF LiDAR menziline ve masa dikey kot farkına (`delta_z = dist * tan(tilt) - 0.0634`) göre hesaplanan süper-elevasyon açı ofseti (+15.0° - +30.0°), fırlatma volan hızı (2.5 - 9.0 m/s), TB6612FNG PWM duty döngüsü (80 - 255 ticks) ve tepe noktası yükselişi.
 
 ### 3. [python_fig3_basket_tolerance_heatmap.png](file:///c:/YTU/turret-fcs/turret_basket/analysis/figures/python/python_fig3_basket_tolerance_heatmap.png)
 - **Modül:** [plot_ballistics_rk4.py](file:///c:/YTU/turret-fcs/turret_basket/analysis/system/python/plot_ballistics_rk4.py)
-- **İçerik:** 2.0m nominal mesafede Pitch Açı Hatası (+/- 1.5 derece) ile Volan Hız Hatası (+/- 1.0 m/s) faz uzayı.
+- **İçerik:** 2.0m nominal mesafede Pitch Açı Hatası (+/- 1.4 derece) ile Volan Hız Hatası (+/- 0.8 m/s) faz uzayı.
 - **Kapsam:** Kupa iç ağız çapı (7.6 cm / +/- 38 mm) tolerans zarfı, başarılı basket bölgesi, ön çeper çarpışması, kısa atış ve aşırı atış bölgelerinin 2B kontur ve saçılım analizi.
 
 ### 4. [python_fig4_engagement_timing_profile.png](file:///c:/YTU/turret-fcs/turret_basket/analysis/figures/python/python_fig4_engagement_timing_profile.png)
 - **Modül:** [plot_engagement_profile.py](file:///c:/YTU/turret-fcs/turret_basket/analysis/system/python/plot_engagement_profile.py)
-- **İçerik:** `BasketEngagement` durum makinesinin 1.58 saniyelik tam atış döngüsü (100 Hz ayrık zaman).
-- **Kapsam:** SPINUP_ELEVATE (0.60 s, Tilt +22.6° yükselmesi ve volan devir alma), FIRING (80 ms solenoid 12V tetik darbesi), RECOVER (0.90 s solenoid geri çekilme ve optik merkeze yumuşak iniş) ve ikili protokol (STATE_TRACKING, STATE_LOCKED, STATE_FIRING) geçişleri.
+- **İçerik:** `BasketEngagement` durum makinesinin 1.33 saniyelik 4-aşamalı tam atış döngüsü (100 Hz ayrık zaman).
+- **Kapsam:** SPINUP_ELEVATE (0.50 s, Tilt yükselmesi ve volan devir alma), SETTLE (0.25 s, mekanik titreşim sönümleme), FIRING (80 ms solenoid 12V tetik darbesi), RECOVER (0.50 s solenoid geri çekilme ve optik merkeze yumuşak iniş) ve ikili protokol (STATE_TRACKING, STATE_LOCKED, STATE_FIRING) geçişleri.
 
 ### 5. [python_fig5_cup_tracker_step_response.png](file:///c:/YTU/turret-fcs/turret_basket/analysis/figures/python/python_fig5_cup_tracker_step_response.png)
 - **Modül:** [plot_cup_tracker.py](file:///c:/YTU/turret-fcs/turret_basket/analysis/controllers/tracker/plot_cup_tracker.py)

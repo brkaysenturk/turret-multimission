@@ -23,10 +23,11 @@ class LaunchParameters(NamedTuple):
 class RLBallistics:
     """2. Model: Kupa mesafesine gore atis egimini ve volan hizini kestiren balistik AI motoru."""
 
-    def __init__(self, models_dir: Optional[Path] = None):
+    def __init__(self, models_dir: Optional[Path] = None, model_name: str = "cup_ballistic_policy.npz"):
         if models_dir is None:
             models_dir = Path(__file__).resolve().parent / "rl" / "models"
         self.models_dir = Path(models_dir)
+        self.model_name = model_name
         self.predict_fn = self._load_model()
 
         self.tilt_min = CONFIG.rl.tilt_offset_min_deg
@@ -37,7 +38,7 @@ class RLBallistics:
 
     def _load_model(self):
         """2. Model: Hizli ve bagimsiz NumPy MLP Balistik Politika yukleyicisi."""
-        model_npz = self.models_dir / "cup_ballistic_policy.npz"
+        model_npz = self.models_dir / self.model_name
         model_zip = self.models_dir / "cup_ballistic_policy.zip"
 
         if model_npz.exists():

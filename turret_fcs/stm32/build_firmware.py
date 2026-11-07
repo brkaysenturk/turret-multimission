@@ -7,7 +7,7 @@ CC = str(GCC_BIN / "arm-none-eabi-gcc.exe")
 OBJCOPY = str(GCC_BIN / "arm-none-eabi-objcopy.exe")
 SIZE = str(GCC_BIN / "arm-none-eabi-size.exe")
 
-REPO_ROOT = Path(r"C:\YTU\turret-fcs")
+REPO_ROOT = Path(__file__).resolve().parents[2]
 FCS_STM_DIR = REPO_ROOT / "turret_fcs" / "stm32"
 BUILD_DIR = FCS_STM_DIR / "build"
 BUILD_DIR.mkdir(parents=True, exist_ok=True)

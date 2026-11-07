@@ -81,29 +81,27 @@ def simulate_full_trajectory(dist_m: float, v0: float, theta_launch_deg: float, 
         ys.append(y)
         times.append(t)
 
-        # 1. Kupa Ic Kavitesine Giris (BASKET)
-        if (dist_m - CUP_INNER_R) <= x <= (dist_m + CUP_INNER_R):
-            if y <= (RIM_REL_Y - 0.015):
+        # 1. Kupa Agiz Duzleminden Ic Kaviteye Giris (BASKET: inis kolunda agiz duzlemini keserken)
+        if vy < 0.0 and y <= (RIM_REL_Y - 0.005):
+            if (dist_m - CUP_INNER_R) <= x <= (dist_m + CUP_INNER_R):
                 hit_event = "BASKET"
                 break
+            elif (dist_m - CUP_OUTER_R) <= x < (dist_m - CUP_INNER_R):
+                hit_event = "FRONT_WALL"
+                break
 
-        # 2. Kupa On Duvar Carpismasi
+        # 2. Kupa On Duvar Carpismasi (agiz duzleminden once dis govdeye carpma)
         if (dist_m - CUP_OUTER_R) <= x < (dist_m - CUP_INNER_R):
             if y < RIM_REL_Y:
                 hit_event = "FRONT_WALL"
                 break
 
-        # 3. Masa Carpismasi
-        if y <= TABLE_REL_Y:
+        # 3. Masa Seviyesi veya Kupa Agiz Duzlemi Gecisi
+        if vy < 0.0 and y <= (RIM_REL_Y - 0.005):
             if x < (dist_m - CUP_OUTER_R):
                 hit_event = "TABLE_SHORT"
             else:
-                hit_event = "TABLE_LONG"
-            break
-
-        # Kupanin arkasina asiri gecis
-        if x > (dist_m + 0.15):
-            hit_event = "OVERSHOOT"
+                hit_event = "OVERSHOOT"
             break
 
     entry_angle_deg = math.degrees(math.atan2(vy, vx))
@@ -172,12 +170,25 @@ def plot_fig1_trajectories():
 
     ai = RLBallistics()
 
-    test_cases = [
-        {"dist": 1.2, "v0": 3.36, "theta": 23.0, "col": "#2563eb", "label": "Hedef 1.2m (v0=3.36 m/s, pitch=23.0°, ToF=390 ms)"},
-        {"dist": 1.8, "v0": 4.52, "theta": 20.0, "col": "#059669", "label": "Hedef 1.8m (v0=4.52 m/s, pitch=20.0°, ToF=430 ms)"},
-        {"dist": 2.4, "v0": 5.26, "theta": 22.0, "col": "#d97706", "label": "Hedef 2.4m (v0=5.26 m/s, pitch=22.0°, ToF=480 ms)"},
-        {"dist": 3.0, "v0": 6.18, "theta": 20.0, "col": "#dc2626", "label": "Hedef 3.0m (v0=6.18 m/s, pitch=20.0°, ToF=515 ms)"},
+    raw_cases = [
+        {"dist": 1.2, "col": "#2563eb"},
+        {"dist": 1.8, "col": "#059669"},
+        {"dist": 2.4, "col": "#d97706"},
+        {"dist": 3.0, "col": "#dc2626"},
     ]
+    test_cases = []
+    for rc in raw_cases:
+        d_val = rc["dist"]
+        lp_val = ai.compute_launch_parameters(d_val, RIM_REL_Y)
+        _, _, ts_val, _, _, _ = simulate_full_trajectory(d_val, lp_val.speed_mps, lp_val.tilt_offset_deg)
+        tof_ms = int(round(ts_val[-1] * 1000.0))
+        test_cases.append({
+            "dist": d_val,
+            "v0": lp_val.speed_mps,
+            "theta": lp_val.tilt_offset_deg,
+            "col": rc["col"],
+            "label": f"Hedef {d_val:.1f}m (v0={lp_val.speed_mps:.2f} m/s, pitch={lp_val.tilt_offset_deg:.1f}°, ToF={tof_ms} ms)"
+        })
 
     # --- Panel 1 (Ust Genis): Yorunge Profilleri ve Kupa Masasi ---
     ax_main = fig.add_subplot(gs[0, :])
@@ -303,7 +314,7 @@ def plot_fig3_tolerance_heatmap():
 
     d_nom = 2.0
     ai = RLBallistics()
-    lp_nom = ai.compute_launch_parameters(d_nom, -0.2287)
+    lp_nom = ai.compute_launch_parameters(d_nom, RIM_REL_Y)
     v_nom = lp_nom.speed_mps
     th_nom = lp_nom.tilt_offset_deg
 

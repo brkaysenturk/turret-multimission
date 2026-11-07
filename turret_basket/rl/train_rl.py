@@ -94,7 +94,6 @@ def train_ballistic_agent(total_timesteps: int = 50000, model_save_name: str = "
     b = 0.05
     g = 9.81
     barrel_z = 1.0387
-    cup_r = 0.043
 
     def solve_smooth(dist_m: float, delta_z_m: float) -> tuple[float, float]:
         """Webots fiziksel taret ve dart balistiginde kanitlanmis sampiyon yorunge formulu:

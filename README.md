@@ -1,23 +1,46 @@
-# Otonom Asimetrik Hava Tehdidi Tespit ve Atış Kontrol Sistemi (Turret FCS)
+# Modular Autonomous Turret Platform (Turret Multi-Mission)
 
 ## Yıldız Teknik Üniversitesi — Kontrol ve Otomasyon Mühendisliği Bölümü
 
-Bitirme Çalışması ve Tasarım Projesi
+Bitirme Çalışması ve Tasarım Projesi (Senior Capstone & Design Project)
 
 [![Release: v3.0](https://img.shields.io/badge/Release-v3.0%20Production-success.svg)](https://github.com/brkaysenturk/turret-fcs/releases/tag/v3.0)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Python 3.10-3.12](https://img.shields.io/badge/Python-3.10--3.12-blue.svg)](https://www.python.org/)
 [![CI](https://github.com/brkaysenturk/turret-fcs/actions/workflows/ci.yml/badge.svg)](https://github.com/brkaysenturk/turret-fcs/actions/workflows/ci.yml)
-[![Tests](https://img.shields.io/badge/Tests-48%20passed-brightgreen.svg)](tests/)
+[![Tests](https://img.shields.io/badge/Tests-51%20passed-brightgreen.svg)](tests/)
 [![Hardware](https://img.shields.io/badge/Hardware-STM32F401RE-002B49.svg)](https://www.st.com/)
 [![LiDAR](https://img.shields.io/badge/LiDAR-TF--Luna%20ToF-blueviolet.svg)](https://en.benewake.com/)
 [![Simulation](https://img.shields.io/badge/Simulation-Webots%20R2025a-red.svg)](https://cyberbotics.com/)
 [![Detection](https://img.shields.io/badge/Detection-YOLOv8n%20%2B%20ByteTrack-00AEEF.svg)](https://ultralytics.com/)
 [![Control](https://img.shields.io/badge/Control-Type--1%20P%20%2B%20PPO-orange.svg)](turret_fcs/p_controller.py)
 
-Turret FCS; mini/mikro İnsansız Hava Araçları ve asimetrik hava hedeflerine karşı elektro-optik tespit, hedef takibi, balistik önleme ve iki eksenli taret yönlendirmesi yapan otonom bir Atış Kontrol Sistemidir. Sistem; operatörün atış yetkisini elinde tuttuğu, kapalı çevrim bir mimariyle çalışır: kamera ve LiDAR verisiyle hedefi bulur, Kalman filtresiyle hedefin gelecekteki konumunu kestirir, P veya pekiştirmeli öğrenme (PPO) kontrolcüsüyle taret açısını üretir ve STM32 üzerinden servo, volan ve solenoidi sürer. Monorepo mimarisi ayrıca dar ağızlı kupa bardağı içine dart basketi atan 2-aşamalı hiyerarşik yapay zekaya sahip Bardak Basketi Görevini (`turret_basket`) de tam teşekküllü bir alt sistem olarak içerir.
+**Turret Multi-Mission Platform**, modüler bir 2-eksenli elektro-optik taret üzerinde çalışan iki bağımsız ve uzmanlaşmış otonom görevi bünyesinde barındıran monorepo mimarisidir:
+1. **Hava Savunma Atış Kontrol Sistemi (`turret_fcs`):** Dinamik hava tehditlerine (balon/İHA) karşı optik tespit, sabit hızlı Kalman kestirimi, Tip-1 P veya PPO RL takip ve kapalı form vuruş olasılığı ile önleme.
+2. **Kupa Bardağı Basketi Görevi (`turret_basket`):** Dar ağızlı bardağa kavisli dart basketi atan 2-aşamalı hiyerarşik yapay zeka (Cup Mouth Tracker + Sinir Ağı / RK4 Balistiği) ve Webots temas fiziği optimizasyonu.
 
-> **English Overview:** Autonomous Air Defense Turret Fire Control System developed as a senior capstone project at Yildiz Technical University. It combines a Logitech C270 camera, YOLOv8n + ByteTrack detection, a TF-Luna ToF LiDAR, a constant-velocity Kalman filter with candidate-replay outlier recovery and ego-motion compensation, a Type-1 P controller and an 11-D PPO policy, closed-form Gaussian hit probability, and STM32F401RE firmware with layered fail-safe protections. The repository also integrates the Cup Basket Challenge (`turret_basket`), featuring a 2-stage hierarchical AI (Cup Mouth Tracker + Neural Ballistics) and Webots contact physics. The operator authorizes every shot; physical firing is disabled by default.
+Her iki görev de aynı fiziksel donanım omurgasını (STM32F401RE Nucleo, MG996R/DS3218 servolar, TF-Luna ToF LiDAR, çift FF-180 volan, JF-0530B solenoid ve C270 kamera) ve Webots R2025a dijital ikiz altyapısını paylaşır.
+
+> **English Overview:** Modular Autonomous Turret Platform developed as a senior capstone project at Yildiz Technical University. Built as an extensible monorepo, it houses two specialized mission pipelines sharing the same physical and simulated hardware:
+> - **Mission 1 (`turret_fcs`):** Autonomous Air Defense Fire Control System with YOLOv8n + ByteTrack, CV Kalman filter with outlier rejection, dual Type-1 P / 11-D PPO tracking, lead compensation, and closed-form Gaussian hit probability.
+> - **Mission 2 (`turret_basket`):** Cup Basket Challenge featuring a 2-stage hierarchical AI (Cup Mouth Ellipse Tracker + Neural / RK4 Ballistic Elevation) solving projectile arc dynamics into a narrow cup.
+
+---
+
+## 🎯 İki Görev Bir Bakışta (Dual-Mission Matrix)
+
+| Yetenek / Özellik | 🎯 Görev 1: Hava Savunma FCS (`turret_fcs`) | 🏀 Görev 2: Bardak Basketi (`turret_basket`) |
+| :--- | :--- | :--- |
+| **Ana Amaç** | Hareketli asimetrik hava hedeflerini havada önleme | Dar ağızlı kupa bardağı içine kavisli dart basketi atma |
+| **Hedef Tipi** | Dinamik uçan balonlar ve mikro İHA'lar | Statik / yarı-statik kupa bardağı ağız elipsi |
+| **Görsel Model** | YOLOv8n + ByteTrack (uzamsal kapılama & histerezis) | YOLO CupDetector + Geometrik elips tepe oranı (%10) |
+| **Kestirim Modeli** | CV Kalman Filtresi (100 px inovasyon kapısı & aday geri oynatma) | Düşük gecikmeli kutu EMA + Parallaks geometrik düzeltme |
+| **Kontrol Mimarisi** | A/B Modu: Tip-1 P Kontrolcü veya 11-D PPO RL Modeli | Aşama 1: PPO Cup Mouth Tracker (hassas yönlendirme) |
+| **Balistik Çözücü** | Doğrusal süper-elevasyon + Kinematik lead ve uçuş süresi | Aşama 2: Sinir Ağı Balistiği (MLP) + RK4 aerodinamik yörünge |
+| **Volan Kontrolü** | 217/255 (~%85 sabit nominal devir) | 130..255 mesafeye duyarlı dinamik PWM devri |
+| **Webots Dünyası** | `webots/worlds/turret_fcs.wbt` (Balon hareketlendirici) | `webots/worlds/turret_basket.wbt` (Bardak & dart kontakt fiziği) |
+| **Tek Tıkla Başlatma** | `turret_fcs\main.bat` | `turret_basket\main.bat` |
+| **Modül Komutu** | `python -m turret_fcs.main` | `python -m turret_basket.main` |
 
 ## İçindekiler
 
@@ -121,13 +144,13 @@ Sistem dört katmandan oluşur. Üst katmanlar karar üretir, alt katmanlar bu k
 [Y] ──> SPINUP + SLEW (0.25 s)
           │  volan nominal devre çıkar, taret lead + süper-elevasyon açısına yönelir
           v
-        SETTLE (0.25 s)
+        SETTLE (0.15 s)
           │  nişan açısı sabit tutulur, servo lag ve dişli boşluğu oturur
           v
         FIRING (80 ms)
           │  STM32 solenoidi kenar tetiklemeli olarak sürer
           v
-        RECOVER (0.35 s)
+        RECOVER (0.25 s)
           │  solenoid yayla geri çekilir, taret optik eksene döner
           v
         EVAL (1.50 s)
@@ -408,7 +431,7 @@ Gerçek plant kısıtlarını modeller: 1.61° ölçülmüş dişli boşluğu, 0
 | :--- | :--- |
 | `Core/Inc/protocol.h` | PC-STM32 çerçeve uzunluğu, başlık, ölçek ve durum kodlarının C tarafındaki tek kaynağı |
 | `Core/Src/main.c` | 100 Hz ana döngü, IWDG beslemesi, heartbeat, B1 mandallı E-stop, servo park ve durum yönlendirmesi |
-| `Core/Src/fcs_comm.c` | 7 bayt komut ayrıştırma, 10 bayt telemetri, checksum, E-stop çift paket doğrulaması, kayan pencere yeniden senkronizasyonu |
+| `Core/Src/fcs_comm.c` | 8 bayt komut ayrıştırma (hız dahil), 10 bayt telemetri, checksum, E-stop çift paket doğrulaması, kayan pencere yeniden senkronizasyonu |
 | `Core/Src/servo_driver.c` | 50 Hz PWM üretimi, açı sınırları, zaman tabanlı 45°/s hız sınırı, yumuşak merkez dönüşü |
 | `Core/Src/luna_read.c` | TF-Luna UART çerçeve ayrıştırma ve mesafe/sinyal güncellemesi |
 | `Core/Src/flywheel_solenoid.c` | Volan enable ve 80 ms / 150 ms non-blocking solenoid durum makinesi |
@@ -695,7 +718,7 @@ setup_env.bat
 venv\Scripts\python.exe -m pytest -q
 ```
 
-48 test; P kontrolcü, Kalman aday geri oynatma, kilit/vuruş olasılığı, LiDAR kapılama, RL sarmalayıcı, Webots tuning, ağırlık yöneticisi, `CONFIG` tutarlılığı ve `turret_basket` (RK4 balistik, RLTracker, RLBallistics, BasketEngagement, BasketManager, UART comm) sözleşmelerini donanım olmadan doğrular.
+51 test; P kontrolcü, Kalman aday geri oynatma, kilit/vuruş olasılığı, LiDAR kapılama, RL sarmalayıcı, Webots tuning, ağırlık yöneticisi, `CONFIG` tutarlılığı ve `turret_basket` (RK4 balistik, RLTracker, RLBallistics, BasketEngagement, BasketManager, UART comm, HUD UI ve FSM) sözleşmelerini donanım olmadan doğrular.
 
 ### 10.4 Sistemi başlatma
 
@@ -833,12 +856,12 @@ Eğitim çıktısı `turret_fcs/rl/models/` altına yazılır. Üretim çıkarı
 
 ## 13. Dizin Yapısı
 
-\\	ext
-turret-fcs/
+```text
+turret-multimission/
 ├── .github/workflows/ci.yml          # Python 3.10-3.12 test ve ruff matrisi
 ├── logs/                             # Telemetri CSV, meta.json ve olay günlükleri
-├── tests/                            # 48 Pytest birim/entegrasyon testi
-├── turret_fcs/                       # Hava Savunma Atış Kontrol Sistemi
+├── tests/                            # 51 Pytest birim/entegrasyon testi
+├── turret_fcs/                       # Görev 1: Hava Savunma Atış Kontrol Sistemi
 │   ├── main.bat                      # Gerçek zamanlı FCS başlatıcı
 │   ├── config.py                     # FCS SSOT konfigürasyonu
 │   ├── main.py                       # Ana çalışma döngüsü
@@ -858,23 +881,11 @@ turret-fcs/
 │   ├── patrol_generator.py           # Figure-8 devriye yörüngesi
 │   ├── weights.py                    # YOLO ağırlık yöneticisi
 │   ├── analysis/                     # Doğrulama, benchmark, log ve figür araçları
-│   │   ├── comparison/               # Benchmark ve figür üreticileri
-│   │   ├── controllers/              # P ve RL optimizasyon araçları
-│   │   ├── figures/                  # Python & MATLAB doğrulama figürleri
-│   │   ├── kalman/                   # Kalman optimizasyon ve doğrulama
-│   │   ├── logs/                     # Telemetri inceleme ve birleştirme
-│   │   ├── patrol/                   # Devriye analizi
-│   │   └── system/                   # Sistem tanılama (python + matlab)
 │   ├── docs/                         # Dokümantasyon, CAD ve varlıklar
-│   │   ├── assets/                   # Mimari, akış ve donanım SVG şemaları
-│   │   ├── cad/                      # 3B baskı STL dosyaları
-│   │   ├── firmware.md               # CubeIDE, pinout ve flaşlama kılavuzu
-│   │   └── reproducibility.md        # Test, eğitim ve figür üretim kılavuzu
 │   ├── rl/                           # Gymnasium ortamı, eğitim motoru ve modeller
 │   ├── stm32/                        # STM32F401RE CubeIDE firmware projesi
-│   │   └── Core/                     # main.c, servo_driver.c, fcs_comm.c, luna_read.c, flywheel_solenoid.c
 │   └── yolo/                         # Veri toplama ve etiketleme araçları
-├── turret_basket/                    # Bardak İçi Dart Basket Görevi (Cup Basket Challenge)
+├── turret_basket/                    # Görev 2: Bardak İçi Dart Basket Görevi (Cup Basket Challenge)
 │   ├── main.bat                      # Basket görevi başlatıcı
 │   ├── config.py                     # Basket SSOT konfigürasyonu
 │   ├── main.py                       # Basket ana döngüsü
@@ -906,7 +917,7 @@ turret-fcs/
 ├── pyproject.toml                    # Paket ve pytest yapılandırması
 ├── CITATION.cff                      # Akademik atıf üstverisi
 └── LICENSE                           # MIT
-\
+```
 ---
 
 ## 14. Dokümantasyon

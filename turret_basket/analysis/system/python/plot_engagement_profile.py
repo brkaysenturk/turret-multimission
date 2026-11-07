@@ -31,20 +31,23 @@ FIG_DIR = PROJECT_ROOT / "turret_basket" / "analysis" / "figures" / "python"
 FIG_DIR.mkdir(parents=True, exist_ok=True)
 
 from turret_basket.engagement import BasketEngagement
+from turret_basket.basket_manager import BasketManager
 
 
 def plot_fig4_engagement_profile():
-    """Figure 4: 2-Asamali Firlatma Durum Makinesi Zaman Cizelgesi ve Eyleyici Profili."""
+    """Figure 4: 4-Asamali Firlatma Durum Makinesi Zaman Cizelgesi ve Eyleyici Profili."""
     eng = BasketEngagement()
+    mgr = BasketManager(comm=None)
 
-    # 100 Hz zaman simülasyonu (0.0 saniye ile 1.70 saniye arasi)
+    # 100 Hz zaman simülasyonu (0.0 saniye ile 1.55 saniye arasi)
     dt = 0.01
-    times = np.arange(0.0, 1.70, dt)
+    times = np.arange(0.0, 1.55, dt)
 
     tilt_at_lock = 0.0
     fire_speed = 4.4
     fire_tilt = 21.8
-    super_elevation = 22.6
+    super_elevation = 21.8
+    target_pwm = mgr.compute_flywheel_pwm(fire_speed)
 
     # Atisi 0.05 saniyede tetikle
     t_trigger = 0.05
@@ -59,6 +62,7 @@ def plot_fig4_engagement_profile():
 
     curr_tilt = tilt_at_lock
     curr_pwm = 0.0
+    solenoid_val = 0.0
 
     for t in times:
         if not triggered and t >= t_trigger:
@@ -73,34 +77,33 @@ def plot_fig4_engagement_profile():
 
         step = eng.update(now=t, current_tilt=curr_tilt)
 
-        # Aktüatör dinamikleri simülasyonu
+        # Aktüatör dinamikleri simülasyonu (4-Asamali FSM: SPINUP_ELEVATE -> SETTLE -> FIRING -> RECOVER)
         if step.is_active:
             if step.phase == "SPINUP_ELEVATE":
-                # Tilt yükselmesi (yumuşak rampa)
                 elapsed_phase = t - t_trigger
                 prog = min(1.0, elapsed_phase / eng.spinup_time_s)
-                # Hermite s-curve: 3*p^2 - 2*p^3
                 smooth_p = prog * prog * (3.0 - 2.0 * prog)
                 curr_tilt = tilt_at_lock + smooth_p * super_elevation
-                # Volan devirlenmesi (TB6612FNG PWM 0 -> 190)
-                curr_pwm = min(190.0, smooth_p * 190.0)
+                curr_pwm = min(target_pwm, smooth_p * target_pwm)
+                solenoid_val = 0.0
+
+            elif step.phase == "SETTLE":
+                curr_tilt = tilt_at_lock + super_elevation
+                curr_pwm = target_pwm
                 solenoid_val = 0.0
 
             elif step.phase == "FIRING":
                 curr_tilt = tilt_at_lock + super_elevation
-                curr_pwm = 190.0
-                # 80 ms boyunca Solenoid Aktif (12V High)
+                curr_pwm = target_pwm
                 solenoid_val = 1.0
 
             elif step.phase == "RECOVER":
-                # Solenoid derhal yayla geri çekilir
                 solenoid_val = 0.0
-                # Volan motoru frenleme / boşa alma
-                elapsed_rec = t - (t_trigger + eng.spinup_time_s + eng.firing_pulse_s)
-                prog_rec = min(1.0, elapsed_rec / eng.recovery_time_s)
+                elapsed_rec = t - (t_trigger + eng.spinup_time_s + eng.settle_time_s + eng.firing_pulse_s)
+                prog_rec = min(1.0, max(0.0, elapsed_rec / eng.recovery_time_s))
                 smooth_rec = prog_rec * prog_rec * (3.0 - 2.0 * prog_rec)
                 curr_tilt = (tilt_at_lock + super_elevation) - smooth_rec * super_elevation
-                curr_pwm = max(0.0, 190.0 * (1.0 - smooth_rec * 1.5))
+                curr_pwm = max(0.0, target_pwm * (1.0 - smooth_rec * 1.5))
         else:
             curr_tilt = tilt_at_lock
             curr_pwm = 0.0
@@ -115,22 +118,24 @@ def plot_fig4_engagement_profile():
 
     fig, axes = plt.subplots(4, 1, figsize=(14, 11), sharex=True)
     fig.patch.set_facecolor("#ffffff")
-    fig.suptitle("Turret Basket: 2-Asamali Firlatma Durum Makinesi Zaman Cizelgesi ve Eyleyici Profili\n"
-                 "SPINUP_ELEVATE (0.60s) -> FIRING (80ms Solenoid Pulse) -> RECOVER (0.90s)",
+    fig.suptitle("Turret Basket: 4-Asamali Firlatma Durum Makinesi Zaman Cizelgesi ve Eyleyici Profili (1.33s)\n"
+                 "SPINUP_ELEVATE (0.50s) -> SETTLE (0.25s) -> FIRING (80ms Solenoid) -> RECOVER (0.50s)",
                  fontsize=13, fontweight="bold", y=0.98, color="#0f172a")
 
     # Faz Arkaplan Renklendirmeleri (Tüm panellere)
     t_start = t_trigger
     t_spinup_end = t_start + eng.spinup_time_s
-    t_fire_end = t_spinup_end + eng.firing_pulse_s
+    t_settle_end = t_spinup_end + eng.settle_time_s
+    t_fire_end = t_settle_end + eng.firing_pulse_s
     t_total_end = t_start + eng.total_seq_time_s
 
     for ax in axes:
         ax.set_facecolor("#fcfcfc")
         ax.grid(True, linestyle="--", alpha=0.5, color="#cbd5e1")
-        ax.axvspan(t_start, t_spinup_end, color="#fef08a", alpha=0.35, label="SPINUP_ELEVATE (0.60s)" if ax == axes[0] else "")
-        ax.axvspan(t_spinup_end, t_fire_end, color="#fca5a5", alpha=0.5, label="FIRING (0.08s Solenoid)" if ax == axes[0] else "")
-        ax.axvspan(t_fire_end, t_total_end, color="#bbf7d0", alpha=0.35, label="RECOVER (0.90s)" if ax == axes[0] else "")
+        ax.axvspan(t_start, t_spinup_end, color="#fef08a", alpha=0.35, label="SPINUP_ELEVATE (0.50s)" if ax == axes[0] else "")
+        ax.axvspan(t_spinup_end, t_settle_end, color="#bae6fd", alpha=0.40, label="SETTLE (0.25s Mekanik Oturma)" if ax == axes[0] else "")
+        ax.axvspan(t_settle_end, t_fire_end, color="#fca5a5", alpha=0.55, label="FIRING (0.08s Solenoid)" if ax == axes[0] else "")
+        ax.axvspan(t_fire_end, t_total_end, color="#bbf7d0", alpha=0.35, label="RECOVER (0.50s)" if ax == axes[0] else "")
 
     # 1. Tilt Acisi Profili
     ax1 = axes[0]

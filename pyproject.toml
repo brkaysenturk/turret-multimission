@@ -3,9 +3,9 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "turret_fcs"
+name = "turret_multimission"
 version = "3.0.0"
-description = "Autonomous Air Defense Turret Fire Control System (FCS) - YTU Senior Capstone Project"
+description = "Modular Autonomous Turret Platform with Dual Missions: Air Defense FCS & Precision Ballistics Cup Basket Challenge - YTU Senior Capstone Project"
 readme = "README.md"
 requires-python = ">=3.10, <3.13"
 license = { text = "MIT" }
@@ -47,6 +47,7 @@ test = [
 
 [project.scripts]
 turret-fcs = "turret_fcs.main:main"
+turret-basket = "turret_basket.main:main"
 
 [tool.setuptools.packages.find]
 where = ["."]
@@ -55,6 +56,11 @@ include = ["turret_fcs*", "turret_basket*"]
 [tool.setuptools.package-data]
 turret_fcs = [
     "rl/models/*.npz",
+    "rl/models/*.zip",
+]
+turret_basket = [
+    "rl/models/*.npz",
+    "rl/models/*.json",
     "rl/models/*.zip",
 ]
 
