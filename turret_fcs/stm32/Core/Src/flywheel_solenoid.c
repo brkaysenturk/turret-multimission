@@ -93,11 +93,10 @@ void Launcher_EmergencyStop(void)
     current_state = LAUNCHER_STATE_IDLE;
 }
 
-void Launcher_Flywheel_SetDuty(uint8_t duty_pct)
+void Launcher_Flywheel_SetDuty(uint8_t duty_255)
 {
-    if (duty_pct > 100u) duty_pct = 100u;
-    configured_duty_pct = duty_pct;
-    target_pulse = ((uint32_t)FLYWHEEL_PWM_ARR * configured_duty_pct) / 100u;
+    configured_duty_pct = duty_255;
+    target_pulse = ((uint32_t)FLYWHEEL_PWM_ARR * configured_duty_pct) / 255u;
 }
 
 uint8_t Launcher_Flywheel_GetDuty(void)

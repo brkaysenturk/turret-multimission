@@ -88,8 +88,6 @@ class FCSManager:
         self.ego_tau_s = CONFIG.control.ego_tau_s
         self.ego_step_pan_deg = 0.0
         self.ego_step_tilt_deg = 0.0
-        if hasattr(self, "dob") and self.dob is not None:
-            self.dob.reset()
         self.ego_var_x = 0.0
         self.ego_var_y = 0.0
         self._frame_ego = (0.0, 0.0)

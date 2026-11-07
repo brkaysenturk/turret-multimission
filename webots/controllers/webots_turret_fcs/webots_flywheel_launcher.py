@@ -181,7 +181,7 @@ class WebotsFlywheelLauncher:
           boundingObject USE DART_SHAPE
           physics Physics {{
             density -1
-            mass 0.015
+            mass 0.012
             centerOfMass [0 0 0]
             inertiaMatrix [
               0.000008 0.000002 0.000008

@@ -187,7 +187,7 @@ class FCSCommunicator:
             pan_angle: Pan acisal duzeltme (derece).
             tilt_angle: Tilt acisal duzeltme (derece).
             fcs_state: Sistem durumu (TRACKING, LOCKED, FIRING, ESTOP).
-            speed_pwm: TB6612FNG PWM duty yuzdesi (0..100). 0 ise STM32 varsayilani (%85) kullanilir.
+            speed_pwm: TB6612FNG PWM duty degeri (0..255). 0 ise STM32 varsayilani (217 = ~%85) kullanilir.
         """
         now = time.time()
         if not self.is_connected:

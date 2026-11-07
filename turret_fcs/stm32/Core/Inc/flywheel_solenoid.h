@@ -22,9 +22,9 @@
 // 20 kHz PWM Zamanlama (84 MHz APB2 timer saatinde ARR = 4199)
 #define FLYWHEEL_PWM_ARR           4199u
 
-// FF-180 (6V 23500 RPM) + Nerf Elite 2.0 Dart ile ~10 m/s icin nominal devir: %85 Duty
-#define FLYWHEEL_DEFAULT_DUTY_PCT  85u
-#define FLYWHEEL_DEFAULT_PULSE     ((uint32_t)(FLYWHEEL_PWM_ARR * FLYWHEEL_DEFAULT_DUTY_PCT) / 100u) // ~3569
+// FF-180 (6V 23500 RPM) + Nerf Elite 2.0 Dart ile ~10 m/s icin nominal devir: 217 / 255 (~%85 Duty)
+#define FLYWHEEL_DEFAULT_DUTY_PCT  217u
+#define FLYWHEEL_DEFAULT_PULSE     ((uint32_t)(FLYWHEEL_PWM_ARR * FLYWHEEL_DEFAULT_DUTY_PCT) / 255u) // ~3574
 
 // Soft-Start Rampa Suresi (ms) - 0'dan nominal devire yumusak artis (inrush akim korumasi)
 #define FLYWHEEL_SOFT_START_MS     150u

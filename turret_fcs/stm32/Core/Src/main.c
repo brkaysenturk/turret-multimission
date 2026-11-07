@@ -230,13 +230,12 @@ int main(void)
         /*
          * Flywheel pre-spin (bosta donme):
          * LOCKED (1) veya FIRING (2) durumunda volanlari enerjilendir.
-         * PC'den gelen dinamik speed_pwm (%0-100 duty): 0 ise varsayilan %85 uygulanir.
+         * PC'den gelen dinamik speed_pwm (0..255 PWM devri): 0 ise varsayilan (217 = ~%85) uygulanir.
          * TRACKING (0) veya ESTOP (3) durumunda volanlari kapat.
          */
         if (state == PROTO_STATE_LOCKED || state == PROTO_STATE_FIRING)
         {
           uint8_t target_duty = (speed_pwm > 0u) ? speed_pwm : FLYWHEEL_DEFAULT_DUTY_PCT;
-          if (target_duty > 100u) target_duty = 100u;
           Launcher_Flywheel_SetDuty(target_duty);
 
           if (!Launcher_IsFlywheelActive())

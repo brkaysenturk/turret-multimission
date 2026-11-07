@@ -20,6 +20,7 @@ CALISMA ZAMANI SOZLESMESI:
 
 import sys
 import math
+import time
 import os
 from pathlib import Path
 import cv2
@@ -104,6 +105,7 @@ def main():
     quit_requested = False
     try:
         while hw.step() != -1:
+            step_start = time.perf_counter()
             frame_id += 1
             sim_t = hw.get_time()
 
@@ -230,7 +232,10 @@ def main():
                 )
 
                 cv2.imshow(WINDOW_NAME, frame)
-                key = cv2.waitKey(1) & 0xFF
+                elapsed = time.perf_counter() - step_start
+                rem_ms = int(round((hw.dt - elapsed) * 1000.0))
+                wait_ms = max(1, min(33, rem_ms)) if rem_ms > 0 else 1
+                key = cv2.waitKey(wait_ms) & 0xFF
 
                 # Operator Klavye ve Etkilesim Haritasi
                 prev_estop = is_estop

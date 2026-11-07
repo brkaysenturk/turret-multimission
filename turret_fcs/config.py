@@ -171,7 +171,7 @@ class FlywheelConfig:
     """Cift volan motoru: kilitliyken bosta donme ve ates boost parametreleri."""
     target_speed_rad_s: float = 2460.9   # 23.500 RPM nominal atis devri
     spinup_time_s: float = 0.25          # Tekil spin-up suresi (0.25 s)
-    duty_pct: int = 85                   # Nominal PWM doluluk yuzdesi (0..100)
+    duty_pct: int = 217                  # Nominal PWM devri (0..255; 217 = ~%85 nominal devir)
 
 
 @dataclass(frozen=True)

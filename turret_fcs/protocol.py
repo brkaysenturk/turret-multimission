@@ -12,7 +12,7 @@ Telemetri cercevesi (STM32 -> PC, 10 bayt):
 
 Aci birimi 0.1 derecedir (deger = aci * 10). Telemetrideki servo acilari
 0..180 derece araligindadir; PC tarafi 90 derece merkez offsetini cikarir.
-Speed birimi 0..100 (PWM duty yuzdesi) veya 0..255'tir (varsayilan 85: %85 nominal).
+Speed birimi 0..255 PWM duty degeridir (varsayilan 217: ~%85 nominal devir).
 """
 
 PC_TO_STM_HEADER = 0xAA

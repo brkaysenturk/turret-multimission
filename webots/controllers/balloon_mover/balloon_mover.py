@@ -142,7 +142,7 @@ RESPAWN_DELAY_SEC = 2.0
 sim_time = 0.0
 
 while robot.step(timestep) != -1:
-    sim_time += timestep / 1000.0
+    sim_time = robot.getTime()
     dx, dz = target_offsets(sim_time)
     if dx is None or dz is None:
         trans_field.setSFVec3f([0.0, 0.0, -20.0])
