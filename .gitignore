@@ -95,9 +95,13 @@ weights/*.pt
 !weights/README.md
 !turret_fcs/rl/models/rl_v2-1*
 
-# 3D assets required by simulation
-!webots/worlds/red_ballonn/red ballon.obj
-!webots/worlds/tf_luna/TF-Luna 3D structure.obj
+# 3D assets required by simulation (distributed via GitHub Releases webots_assets.zip)
+webots/worlds/turret_cad_v10/
+webots/worlds/cup_mug/
+webots/worlds/logitech_c270/
+webots/worlds/red_ballonn/
+webots/worlds/tf_luna/
+webots/worlds/*.zip
 
 # Compiled TensorRT and ONNX weights
 *.engine

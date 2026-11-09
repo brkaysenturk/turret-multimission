@@ -76,6 +76,26 @@ echo [Dogrulama] Temel importlar kontrol ediliyor...
 "%VENV_PY%" -c "import numpy, cv2, torch, ultralytics, serial, turret_fcs, turret_basket; print('[OK] numpy', numpy.__version__, 'opencv', cv2.__version__, 'torch', torch.__version__)"
 if errorlevel 1 goto :verify_failed
 
+rem ------------------------------------------------------------------
+rem 5) Webots runtime.ini dosyalarini yerel mutlak yola gore yapilandir
+rem ------------------------------------------------------------------
+echo.
+echo [Webots] Webots kontrolculeri icin runtime.ini yapilandiriliyor...
+set "VENV_ABS_PY=%~dp0venv\Scripts\python.exe"
+set "VENV_ABS_PY=!VENV_ABS_PY:\=/!"
+for %%C in (balloon_mover webots_turret_basket webots_turret_fcs) do (
+    if exist "webots\controllers\%%C" (
+        (
+            echo [python]
+            echo COMMAND = !VENV_ABS_PY!
+            echo.
+            echo [environment variables]
+            echo PYTHONUNBUFFERED = 1
+        ) > "webots\controllers\%%C\runtime.ini"
+    )
+)
+echo [OK] Webots runtime.ini dosyalari hazirlandi (!VENV_ABS_PY!).
+
 echo.
 echo ==============================================================
 echo  [TAMAMLANDI] Tum kutuphaneler basariyla kuruldu!

@@ -705,8 +705,8 @@ Tüm analiz grafikleri `turret_fcs/analysis/figures/` altında `python/` ve `mat
 ### 10.2 Otomatik kurulum
 
 ```bash
-git clone https://github.com/brkaysenturk/turret-fcs.git
-cd turret-fcs
+git clone https://github.com/brkaysenturk/turret-multimission.git
+cd turret-multimission
 setup_env.bat
 ```
 
@@ -750,8 +750,9 @@ venv\Scripts\python.exe -m turret_basket.main
 
 ### 10.5 Webots dijital ikizi
 
-1. Webots R2025a ile `webots/worlds/turret_fcs.wbt` (Hava Savunma) veya `webots/worlds/turret_basket.wbt` (Bardak Basketi) dosyasını açın.
-2. Başlangıç modunu seçin:
+1. GitHub Releases sayfasından `webots_assets.zip` dosyasını indirin ve `webots/worlds/` klasörü altına çıkartın (3B taret, bardak, kamera ve lidar modelleri).
+2. Webots R2025a ile `webots/worlds/turret_fcs.wbt` (Hava Savunma) veya `webots/worlds/turret_basket.wbt` (Bardak Basketi) dosyasını açın.
+3. Başlangıç modunu seçin:
 
    ```text
    WEBOTS_CONTROL_MODE=P     # hassas kilit
