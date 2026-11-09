@@ -67,3 +67,23 @@ def test_lidar_off_target_and_geometric_fallback():
     # 4.5 m duvar mesafesi kabul edilmemeli!
     assert fcs.last_valid_target_dist_m == 2.0
     assert fcs.range_geom_m is not None and fcs.range_geom_m > 3.5
+
+    # CAD v10 3.30 cm dikey paralaks ve %60 elips cekirdek kapisi testi:
+    # 1.5 m'deki balon (280x280 px kutu) kamera merkezinin (640, 360) 65 px yukarisindayken (y=295):
+    # Kamera merkezi (360) kutunun alt yarisinin icindedir (295 + 140 = 435), ANCAK 3.30 cm asagidaki
+    # LiDAR izi (y ~ 391) %60 elips cekirdeginin (295 + 84 = 379) disina kayip duvara (420 cm) vurmustur!
+    fcs_parallax = FCSManager(control_mode="P")
+    fcs_parallax._update_lidar_range(
+        150, False, (280, 280), 1411.0, 1411.0,
+        box_center=(640.0, 380.0), frame_center=(640.0, 360.0),
+    )
+    assert fcs_parallax.range_valid is True
+    assert fcs_parallax.last_valid_target_dist_m == 1.50
+
+    fcs_parallax._update_lidar_range(
+        420, False, (280, 280), 1411.0, 1411.0,
+        box_center=(640.0, 295.0), frame_center=(640.0, 360.0),
+    )
+    assert fcs_parallax.range_status == "off_target"
+    assert fcs_parallax.range_valid is False
+    assert fcs_parallax.last_valid_target_dist_m == 1.50

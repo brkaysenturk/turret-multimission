@@ -25,7 +25,7 @@ Bu doküman; Turret FCS projesinin gömülü denetleyici katmanı olan **STM32F4
 | **TF-Luna LiDAR RX** | `PA10` (USART1_RX) | Benewake TF-Luna | 100 Hz ToF mesafe telemetrisi alımı (115200 Baud UART) |
 | **TF-Luna LiDAR TX** | `PA9` (USART1_TX) | Benewake TF-Luna | LiDAR konfigürasyon ve sorgulama hattı |
 | **PC İletişim TX** | `PA2` (USART2_TX) | ST-Link VCP | PC'ye 10-baytlık durum ve LiDAR telemetrisi iletimi (`0x55` header) |
-| **PC İletişim RX** | `PA3` (USART2_RX) | ST-Link VCP | PC'den 7-baytlık ikili komut paketi alımı (`0xAA` header + Pan + Tilt + State + CS) |
+| **PC İletişim RX** | `PA3` (USART2_RX) | ST-Link VCP | PC'den 8-baytlık ikili komut paketi alımı (`0xAA` header + Pan + Tilt + Speed + State + CS) |
 | **Kullanıcı Butonu (B1)** | `PC13` (GPIO Input) | Mavi Buton (B1) | Mandallı yazılım E-stop: ilk basışta volan/solenoid kesilir ve servolar merkeze iner; ikinci basışta mandal çözülür. Dahili pull-up + 250 ms debounce |
 | **Durum LED'i (LD2)** | `PA5` (GPIO Output) | Yeşil LED (LD2) | Sistem hazır / ana döngü aktivite göstergesi |
 

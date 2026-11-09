@@ -35,7 +35,7 @@ analysis/
 │   │   └── p_optuna_results.json
 │   └── rl/                    # PPO Pekiştirmeli Öğrenme kontrolcü araçları
 │       ├── optimize_rl_wrapper.py      # RL sarmalayıcı sönümleme ve ölü bölge optimizasyonu
-│       ├── export_rl_policy.py         # PyTorch politikasını hafif 11-64-64-2 NumPy MLP'ye aktarır
+│       ├── export_rl_policy.py         # PyTorch politikasını hafif 9-64-64-2 NumPy MLP'ye aktarır
 │       ├── rl_diagnose.py              # PPO politikasının eylem sürekliliği ve başarım teşhisi
 │       └── best_rl_wrapper_params.json
 ├── kalman/                    # CV Kalman filtresi optimizasyon ve kestirim doğrulaması

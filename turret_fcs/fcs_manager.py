@@ -55,6 +55,7 @@ class FCSManager:
 
         self.max_lost_frames = max_lost_frames
         self.frames_since_lost = 0
+        self.consecutive_target_frames = 0
 
         self.target_velocity = np.array([0.0, 0.0], dtype=float)
         self.pred_center = np.array([0.0, 0.0], dtype=float)
@@ -196,15 +197,31 @@ class FCSManager:
             self.range_jump = False
             return
 
-        # Nisangah merkezi hedef kutusunun disindaysa LiDAR arka plani okuyordur.
+        # Nisangah merkezi yerine 3.30 cm asagidaki LiDAR lazer izinin (lidar_spot_y)
+        # hedef kutusunun %60'lik elips cekirdegi icinde olup olmadigini denetle.
         if box_center is not None and frame_center is not None and box_dim is not None:
-            if (abs(float(box_center[0]) - float(frame_center[0])) > float(box_dim[0]) / 2.0
-                    or abs(float(box_center[1]) - float(frame_center[1])) > float(box_dim[1]) / 2.0):
-                self.range_valid = False
-                self.range_stable = False
-                self.range_jump = False
-                self.range_status = "off_target"
-                return
+            bw, bh = float(box_dim[0]), float(box_dim[1])
+            if bw > 0.0 and bh > 0.0:
+                d_ref = float(self.last_valid_target_dist_m)
+                if self.range_geom_m is not None:
+                    d_ref = max(d_ref, float(self.range_geom_m))
+                d_ref = max(L.min_distance_m, d_ref)
+                fy_safe = float(fy) if (fy is not None and float(fy) > 1.0) else 1100.0
+                # CAD v10: camera_to_lidar_z_m = -0.0330 m -> Goruntude (asagi +Y) +dy_lidar_px kayma
+                dy_lidar_px = -fy_safe * (L.camera_to_lidar_z_m / d_ref)
+                lidar_spot_x = float(frame_center[0])
+                lidar_spot_y = float(frame_center[1]) + dy_lidar_px
+
+                core_rx = max(1.0, 0.5 * bw * L.core_ellipse_ratio)
+                core_ry = max(1.0, 0.5 * bh * L.core_ellipse_ratio)
+                norm_dx = (lidar_spot_x - float(box_center[0])) / core_rx
+                norm_dy = (lidar_spot_y - float(box_center[1])) / core_ry
+                if (norm_dx * norm_dx + norm_dy * norm_dy) > 1.0:
+                    self.range_valid = False
+                    self.range_stable = False
+                    self.range_jump = False
+                    self.range_status = "off_target"
+                    return
 
         geom_bad = False
         if self.range_geom_m is not None and self.range_geom_m > 0.3:
@@ -339,13 +356,18 @@ class FCSManager:
     def _update_tracking_and_ballistics(self, best_box, center_x, center_y, fx, fy, dt, is_firing, dist_cm):
         """Hedef acilari, menzil kapilama, ego-hareket, Kalman hiz kestirimi ve kilit durumunu gunceller."""
         self.frames_since_lost = 0
+        self.consecutive_target_frames += 1
         x1, y1, x2, y2 = best_box
         bx = (x1 + x2) // 2
         by = (y1 + y2) // 2
         box_dim = (float(x2 - x1), float(y2 - y1))
 
         # Devriye modulune hedefin son bilinen taret koordinatlarini bildir
-        self.patrol.on_target_detected(self.turret_pan_deg, self.turret_tilt_deg)
+        self.patrol.on_target_detected(
+            self.turret_pan_deg,
+            self.turret_tilt_deg,
+            confirmed=(self.consecutive_target_frames >= self.patrol.confirm_frames),
+        )
         self.patrol_status = "TRACKING"
 
         # 1. Kamera merkezinden hedef acilari ve acisal hata
@@ -485,6 +507,7 @@ class FCSManager:
         if fy is None:
             fy = CONFIG.optics.compute_fy(CONFIG.optics.default_height)
         self.frames_since_lost += 1
+        self.consecutive_target_frames = 0
         self.last_pan_err_deg = 0.0
         self.last_tilt_err_deg = 0.0
         self._reset_lidar_range()
@@ -566,13 +589,14 @@ class FCSManager:
         self.tracking_lag_deg = float(np.hypot(err_p, err_t))
         self.is_stalled = self.tracking_lag_deg > 8.0
 
-        # Duragan durumda yavas tamamlayici filtre ile kayma telafisi (soft drift correction)
+        # Duragan durumda tamamlayici filtre ile kayma telafisi (soft drift correction)
         if abs(self.last_cmd_pan) < 0.05 and abs(self.last_cmd_tilt) < 0.05:
-            self.turret_pan_deg -= 0.02 * err_p
-            self.turret_tilt_deg -= 0.02 * err_t
+            self.turret_pan_deg -= 0.15 * err_p
+            self.turret_tilt_deg -= 0.15 * err_t
 
     def reset(self):
         self.frames_since_lost = 0
+        self.consecutive_target_frames = 0
         self.patrol_status = "STANDBY"
         self._reset_lidar_range()
         self.last_valid_target_dist_m = float(CONFIG.ballistics.default_distance_m)

@@ -117,3 +117,47 @@ def test_dual_state_pose_architecture():
     assert fcs.turret_tilt_deg == pytest.approx(0.0)
     assert not fcs.is_stalled
 
+
+def test_patrol_continuous_return_dt_slew_and_transient_immunity():
+    """Devriye modunda kesintisiz merkeze donus, dt-olcekli slew ve sahte tespit bagisikligini dogrular."""
+    fcs = FCSManager(control_mode="P", patrol_enabled=True)
+    fcs.sync_turret_pose(12.0, -4.0, force=True)
+
+    # 1. 1.5s HOLDING sonrasi RETURNING asamasinda her karede 0.0 olmadan kesintisiz adim uretilmeli
+    for _ in range(46):
+        fcs.update(None, 640, 360, 1100.0, 1100.0, 1.0 / 30.0)
+    assert fcs.patrol.state == "RETURNING"
+
+    steps_pan = []
+    for _ in range(6):
+        dp, _ = fcs.update(None, 640, 360, 1100.0, 1100.0, 1.0 / 30.0)
+        steps_pan.append(dp)
+    assert all(dp < -0.5 for dp in steps_pan), "RETURNING adimlari dur-kalk (0.0) yapmadan kesintisiz olmali"
+
+    # 2. SCANNING asamasinda kisa dt (8 ms) geldiginde adim STM32 hiz siniriyla (45 deg/s * dt) olceklenmeli
+    fcs.patrol.state = "SCANNING"
+    fcs.patrol.scan_time = 2.0
+    dp_short, dt_short, _ = fcs.patrol.update(0.008, current_pan=0.0, current_tilt=0.0)
+    expected_limit = 1.5 * (0.008 / CONFIG.rl.nominal_dt_s)
+    assert abs(dp_short) == pytest.approx(expected_limit, rel=1e-3)
+    assert abs(dt_short) <= expected_limit + 1e-6
+
+    # 3. SCANNING sirasinda 1-2 karelik gecici (sahte) tespit taramayi WAITING (1.5s donma) durumuna dusurmemeli
+    saved_scan_time = fcs.patrol.scan_time
+    box = [630, 350, 650, 370]
+    fcs.update(box, 640, 360, 1100.0, 1100.0, 1.0 / 30.0, dist_cm=200)
+    fcs.update(box, 640, 360, 1100.0, 1100.0, 1.0 / 30.0, dist_cm=200)
+    assert fcs.patrol.state == "SCANNING"
+    assert fcs.patrol.scan_time == pytest.approx(saved_scan_time)
+
+    # Sahte tespit kayboldugunda 1.5s HOLDING'e girmeden dogrudan FIGURE-8 SCAN devam etmeli
+    fcs.update(None, 640, 360, 1100.0, 1100.0, 1.0 / 30.0)
+    assert fcs.patrol.state == "SCANNING"
+    assert "FIGURE-8 SCAN" in fcs.patrol_status
+
+    # 4. Gercek hedef (3+ ardisik kare) yakalandiginda ise devriye WAITING durumuna sifirlanmali
+    for _ in range(3):
+        fcs.update(box, 640, 360, 1100.0, 1100.0, 1.0 / 30.0, dist_cm=200)
+    assert fcs.patrol.state == "WAITING"
+
+

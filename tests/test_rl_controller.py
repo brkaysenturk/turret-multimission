@@ -161,3 +161,15 @@ def test_rl_asymmetric_braking_eliminates_overshoot():
     d_stop, _ = rl.predict_angles(642.0, 360.0, 640.0, 360.0, 1280.0, 720.0, 0, 0, 2.0, 0.40, 0.0, 0.03333)
     assert d_stop == 0.0
     assert rl.command_speed_pan_deg_s == 0.0
+
+    # Smith Predictor (_compensate_in_flight) cikisi sonumlerken gozlemdeki hata turevini (d_err) bozmamali:
+    rl_smith = RLController(auto_load=False, soft_deadband_enabled=True, in_flight_damping=0.6875)
+    rl_smith.model = fake
+    rl_smith.is_loaded = True
+    rl_smith.predict_angles(680.0, 360.0, 640.0, 360.0, 1280.0, 720.0, 0, 0, 2.0, 1.60, 0.0, 0.03333)
+    # Kameradaki hedef sabitken (bx=680.0) in-flight gecmisi degisse bile ham d_err_x 0.0 kalmali!
+    rl_smith.cmd_hist_pan_1 = 0.0
+    rl_smith.cmd_hist_pan_2 = 0.0
+    rl_smith.cmd_hist_pan_3 = 0.0
+    rl_smith.predict_angles(680.0, 360.0, 640.0, 360.0, 1280.0, 720.0, 0, 0, 2.0, 1.60, 0.0, 0.03333)
+    assert fake.last_obs[2] == pytest.approx(0.0, abs=1e-6)

@@ -322,11 +322,13 @@ class RLController:
             return 0.0, 0.0
 
         dt_safe = PController.normalize_dt(dt)
+        # Gozlem ve hata turevi (d_err) egitimdeki gibi dogrudan gercek kamera olcumunden (bx, by)
+        # uretilir; boylece _compensate_in_flight sönümlemesi sahte turev sicramasi yaratmaz.
+        obs = self.build_observation(
+            bx, by, center_x, center_y, screen_w, screen_h, dist_m, dt_safe
+        )
         bx_pred, by_pred, err_pan_pred, err_tilt_pred = self._compensate_in_flight(
             bx, by, center_x, center_y, screen_w, screen_h, curr_pan_deg, curr_tilt_deg
-        )
-        obs = self.build_observation(
-            bx_pred, by_pred, center_x, center_y, screen_w, screen_h, dist_m, dt_safe
         )
         action, _ = self.model.predict(obs, deterministic=True)
         action = np.asarray(action, dtype=np.float32).reshape(self.ACT_DIM)

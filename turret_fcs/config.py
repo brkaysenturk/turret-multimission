@@ -163,7 +163,9 @@ class LidarConfig:
     stability_window: int = 3            # Ates icin gereken kararli okuma sayisi
     stability_tolerance_m: float = 0.10  # Bu pencerede izin verilen mesafe dalgalanmasi
     reacquire_frames: int = 3            # Gercek menzil degisimini kabul icin ust uste kare
-    geometry_tolerance_ratio: float = 0.75  # Kutu boyutundan mesafe ile LiDAR uyumsuzlugu
+    geometry_tolerance_ratio: float = 0.35  # Kutu boyutundan mesafe ile LiDAR uyumsuzlugu (duvar sicrama kilidi)
+    camera_to_lidar_z_m: float = -0.0330  # CAD v10: TF-Luna LiDAR kameranin 33.0 mm (3.30 cm) altindadir
+    core_ellipse_ratio: float = 0.60      # Balon kuresel yansitici merkez elips orani (%60 cekirdek kapisi)
 
 
 @dataclass(frozen=True)
@@ -230,7 +232,8 @@ class PatrolConfig:
     scan_period_sec: float = 8.0
     return_speed_dps: float = 20.0
     max_slew_per_frame: float = 1.5
-    min_dispatch_deg: float = 0.95
+    min_dispatch_deg: float = 0.0
+    confirm_frames: int = 3
 
 
 @dataclass(frozen=True)

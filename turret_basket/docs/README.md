@@ -9,13 +9,13 @@ Bu proje; otonom pan-tilt tareti kullanarak masada duran kulplu bir kupaya (mug)
 ![Turret Basket Sistem Mimarisi](assets/turret_basket_architecture.svg)
 
 1. **1. Model (Görsel Kilitlenme - CupTracker):**
-   * Dosya: [rl_tracker.py](file:///c:/YTU/turret-fcs/turret_basket/rl_tracker.py) & [cup_tracker_policy.npz](file:///c:/YTU/turret-fcs/turret_basket/rl/models/cup_tracker_policy.npz)
+   * Dosya: [rl_tracker.py](file:///c:/YTU/turret-multimission/turret_basket/rl_tracker.py) & [cup_tracker_policy.npz](file:///c:/YTU/turret-multimission/turret_basket/rl/models/cup_tracker_policy.npz)
    * `turret_fcs` projesinde eğitilen 9-64-64-2 NumPy PPO modelini kullanır.
    * Kameradan kupayı yakaladığı anda tareti kupa ağzı elipsinin merkezine (`aim_mouth_ratio = 0.12`) optik olarak kilitler (`err_x -> 0`, `err_y -> 0`).
 2. **2. Model (Balistik Açı ve Volan Hızı Karar Ajanı):**
-   * Dosya: [rl_ballistics.py](file:///c:/YTU/turret-fcs/turret_basket/rl_ballistics.py) & [cup_ballistic_policy.npz](file:///c:/YTU/turret-fcs/turret_basket/rl/models/cup_ballistic_policy.npz)
-   * Ortam: [cup_env.py](file:///c:/YTU/turret-fcs/turret_basket/rl/cup_env.py) (`BallisticBasketEnv`)
-   * Eğitim Betiği: [train_rl.py](file:///c:/YTU/turret-fcs/turret_basket/rl/train_rl.py)
+   * Dosya: [rl_ballistics.py](file:///c:/YTU/turret-multimission/turret_basket/rl_ballistics.py) & [cup_ballistic_policy.npz](file:///c:/YTU/turret-multimission/turret_basket/rl/models/cup_ballistic_policy.npz)
+   * Ortam: [cup_env.py](file:///c:/YTU/turret-multimission/turret_basket/rl/cup_env.py) (`BallisticBasketEnv`)
+   * Eğitim Betiği: [train_rl.py](file:///c:/YTU/turret-multimission/turret_basket/rl/train_rl.py)
    * Hedef kilitlendiğinde LiDAR mesafesini (0.60m - 4.00m) alır; dartın kupanın ağzından içeriye basket olması için gereken:
      * **Ekstra Tilt Atış Açısını (Süper-elevasyon: +5.0° ile +24.5° arası)**
      * **Dinamik Volan Sürücü Hızını (3.0 m/s ile 12.0 m/s arası dinamik lob hızı)**
@@ -47,14 +47,14 @@ Bu proje; otonom pan-tilt tareti kullanarak masada duran kulplu bir kupaya (mug)
 
 ## 3. Webots Dünyası ve Kontrolcüsü
 
-* **Dünya Dosyası:** [webots/worlds/turret_basket.wbt](file:///c:/YTU/turret-fcs/webots/worlds/turret_basket.wbt)
+* **Dünya Dosyası:** [webots/worlds/turret_basket.wbt](file:///c:/YTU/turret-multimission/webots/worlds/turret_basket.wbt)
   * Aynı taret (MG996R servo torkları, C270 kamera, TF-Luna LiDAR, fırçasız çift volan motorları ve solenoid).
   * Masanın karşısında içi boş kulplu seramik kupa (`DEF CUP`).
   * Kupanın dibinde temas algılayıcı (`cup_basket_sensor TouchSensor`).
-* **Kontrolcü:** [webots_turret_basket.py](file:///c:/YTU/turret-fcs/webots/controllers/webots_turret_basket/webots_turret_basket.py)
+* **Kontrolcü:** [webots_turret_basket.py](file:///c:/YTU/turret-multimission/webots/controllers/webots_turret_basket/webots_turret_basket.py)
   * 1. Model ile kupaya kilitlenir.
   * 2. Modelden gelen süper-elevasyon açısı ve dinamik volan hızıyla basket atışını icra eder.
-  * Ekrana modern bilgilendirici [basket_hud.py](file:///c:/YTU/turret-fcs/turret_basket/basket_hud.py) arayüzünü canlı basar.
+  * Ekrana modern bilgilendirici [basket_hud.py](file:///c:/YTU/turret-multimission/turret_basket/basket_hud.py) arayüzünü canlı basar.
 
 ---
 

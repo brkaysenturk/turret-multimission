@@ -10,8 +10,8 @@ Proje Python 3.10, 3.11 ve 3.12 sürümleri ile test edilmiş ve doğrulanmışt
 
 ```bash
 # Depoyu klonlayın ve proje kök dizinine geçin
-git clone https://github.com/brkaysenturk/turret-fcs.git
-cd turret-fcs
+git clone https://github.com/brkaysenturk/turret-multimission.git
+cd turret-multimission
 
 # Sanal ortam oluşturun ve aktif edin
 python -m venv venv
@@ -28,33 +28,34 @@ pip install -e .[test]
 
 Sistem, donanıma (kamera veya fiziksel STM32) ihtiyaç duymadan mock sürücüler ve analitik simülatörler üzerinden tüm alt bileşenleri doğrular.
 
-### Basket Challenge Özel Testleri (11 Test)
+### Basket Challenge Özel Testleri (15 Test)
 
 ```bash
-pytest tests/test_turret_basket.py -v
+pytest tests/test_basket_*.py -v
 ```
 
 Bu test paketi şu kritik işlevleri doğrular:
 
 1. **`test_basket_config_ssot`:** Kamera parametreleri (640x480, 30 FPS, odak uzaklığı), donanım mekanik açı sınırları, hedef kupa boyutları (9.0 cm ağız çapı, 10.6 cm yükseklik) ve atış zamanlamalarının (600 ms devirlenme, 80 ms darbe, 900 ms geri çekilme) tüm modüllerde tutarlı okunduğunu denetler.
-2. **`test_basket_protocol_constants`:** [protocol.py](file:///c:/YTU/turret-fcs/turret_basket/protocol.py) ile [protocol.h](file:///c:/YTU/turret-fcs/turret_basket/stm32/protocol.h) arasındaki bayt uzunlukları, başlıklar (`0xAA`, `0x55`, `0x59`) ve açı ölçekleme (0.1 derece) sabitlerinin birebir eşleştiğini doğrular.
-3. **`test_basket_comm_packet_serialization_and_checksum`:** 7 baytlık komut paketi serileştirmesini, 10 baytlık telemetri ayrıştırmasını ve 8-bit checksum algoritmasını doğrular.
+2. **`test_basket_protocol_constants`:** [protocol.py](file:///c:/YTU/turret-multimission/turret_basket/protocol.py) ile [protocol.h](file:///c:/YTU/turret-multimission/turret_basket/stm32/protocol.h) arasındaki bayt uzunlukları, başlıklar (`0xAA`, `0x55`, `0x59`) ve açı ölçekleme (0.1 derece) sabitlerinin birebir eşleştiğini doğrular.
+3. **`test_basket_comm_packet_serialization_and_checksum`:** 8 baytlık komut paketi serileştirmesini, 10 baytlık telemetri ayrıştırmasını ve 8-bit checksum algoritmasını doğrular.
 4. **`test_basket_rl_tracker_inference`:** 1. Modelin (CupTracker) 9-64-64-2 NumPy MLP mimarisinde doğru eylem ürettiğini ve yumuşak ölü bölge (soft deadband) sönümlemesini doğrular.
 5. **`test_basket_rl_ballistics_inference`:** 2. Modelin (RLBallistics) ToF LiDAR mesafesine göre dinamik süper-elevasyon (+21.8° ile +22.6°) ve volan fırlatma hızı (4.4 m/s) ürettiğini doğrular.
 6. **`test_basket_engagement_fsm`:** 2-Aşamalı atış durum makinesinin (SPINUP_ELEVATE -> FIRING -> RECOVER) zaman aşımı sürelerini ve bayraklarını doğrular.
-7. **`test_basket_manager_lifecycle`:** Hedef tespiti, menzil kapılama (range gating), kilit kararlılığı ve atış yetkilendirme yaşam döngüsünü doğrular.
-8. **`test_basket_ballistics_rk4_trajectory`:** 4. Derece Runge-Kutta (RK4) aerodinamik sürtünmeli parabolik yörünge çözücüsünün fiziksel doğruluğunu test eder.
+7. **`test_basket_manager_lifecycle`, `test_basket_manager_range_latch_on_lock`, `test_basket_manager_real_system_improvements`:** Hedef tespiti, menzil kapılama (range gating), kilit anı mesafe mandallama ve atış yetkilendirme yaşam döngüsünü doğrular.
+8. **`test_basket_ballistics_rk4_trajectory` & `test_webots_3d_muzzle_ballistics_and_ccd`:** 4. Derece Runge-Kutta (RK4) aerodinamik sürtünmeli parabolik yörünge çözücüsünü ve Webots 3B namlu CCD çarpışma modelini test eder.
 9. **`test_basket_ballistics_gym_environment`:** `BallisticBasketEnv` Gymnasium ortamının adımlama, gözlem normalizasyonu ve sepet ödül fonksiyonunu doğrular.
 10. **`test_basket_hud_and_presenter`:** OpenCV tabanlı baş-üstü gösterge (HUD) katmanlarının ve durum panellerinin hatasız çizildiğini doğrular.
 11. **`test_basket_keymap_events`:** Klavye komut eşlemelerinin (SPACE, Y, N, R, E, Q, ESC) durum makinesiyle uyumlu çalıştığını denetler.
+12. **`test_cup_mouth_lockon_and_distance_standardization`:** Kupa ağzı elips oranı ve mesafe standardizasyonunu doğrular.
 
-### Tüm Proje Test Paketi (46 Test)
+### Tüm Proje Test Paketi (52 Test)
 
 ```bash
 pytest -v
 ```
 
-Turret FCS ve Basket Challenge'ın tüm 46 testini koşturarak sistem genelinde hiçbir regresyon olmadığını doğrular.
+Turret FCS ve Basket Challenge'ın tüm 52 testini koşturarak sistem genelinde hiçbir regresyon olmadığını doğrular.
 
 ---
 
@@ -136,11 +137,11 @@ Webots R2025a ortamında taret ve kulplu kupa dijital ikizini koşturmak için:
    webots/worlds/turret_basket.wbt
    ```
 2. Dünyada seramik kupa (`DEF CUP`) ve tabanında temas algılayıcı (`cup_basket_sensor TouchSensor`) yer almaktadır.
-3. Kontrolcü: [webots_turret_basket.py](file:///c:/YTU/turret-fcs/webots/controllers/webots_turret_basket/webots_webots_turret_basket.py).
+3. Kontrolcü: [webots_turret_basket.py](file:///c:/YTU/turret-multimission/webots/controllers/webots_turret_basket/webots_turret_basket.py).
 4. Simülasyonu başlatın:
    - **SPACE:** Dartı fırlatır (2-aşamalı durum makinesi devrededir).
    - **R:** Kupayı masada rastgele yeni bir mesafeye taşır (1.3m - 2.7m).
-   - Ekranda canlı [basket_hud.py](file:///c:/YTU/turret-fcs/turret_basket/basket_hud.py) baş-üstü göstergesi görüntülenir; dart kupa tabanına değdiğinde temas sensörü algılar ve `BASKET!` skoru kaydedilir.
+   - Ekranda canlı [basket_hud.py](file:///c:/YTU/turret-multimission/turret_basket/basket_hud.py) baş-üstü göstergesi görüntülenir; dart kupa tabanına değdiğinde temas sensörü algılar ve `BASKET!` skoru kaydedilir.
 
 ---
 

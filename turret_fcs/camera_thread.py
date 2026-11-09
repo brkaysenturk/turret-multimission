@@ -237,7 +237,7 @@ class CameraThread:
         return_id=True verilirse (ok, frame, frame_id) seklinde doner.
         """
         if wait_for_new:
-            self.new_frame_event.wait(timeout=min(0.050, timeout))
+            self.new_frame_event.wait(timeout=min(0.100, timeout))
             self.new_frame_event.clear()
 
         with self.lock:
