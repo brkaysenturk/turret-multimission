@@ -47,8 +47,8 @@ WorldInfo {
   ]
 }
 Viewpoint {
-  orientation -0.1922161011575412 0.34501486111184465 0.918704368155376 1.090258882297948
-  position -2.483026925785718 -2.5306510117814947 2.320238417363035
+  orientation -0.12163 0.03927 0.9918 2.52176
+  position 2.15 -0.95 1.5
   followType "None"
 }
 TexturedBackground {
@@ -59,7 +59,7 @@ DirectionalLight {
   ambientIntensity 0.35
   direction 0.25 1 -0.6
   intensity 2.5
-  castShadows TRUE
+  castShadows FALSE
 }
 Desk {
 }
